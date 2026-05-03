@@ -21,7 +21,7 @@ from pm25_forecast.models.statistical_models import (
     train_sarima_model,
 )
 from pm25_forecast.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
-from pm25_forecast.scripts import train_lstm
+from pm25_forecast.scripts import train_attention_lstm, train_lstm
 from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
@@ -62,6 +62,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--extreme-weight", type=float, default=5.0)
     parser.add_argument("--huber-delta", type=float, default=0.05)
     parser.add_argument("--variance-penalty", type=float, default=0.05)
+    parser.add_argument("--attention-heads", type=int, default=4)
     parser.add_argument("--lr-patience", type=int, default=5)
     parser.add_argument("--lr-factor", type=float, default=0.5)
     parser.add_argument("--early-stopping-patience", type=int, default=15)
@@ -163,8 +164,11 @@ def train_non_lstm(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_training(args: argparse.Namespace) -> dict[str, Any]:
-    if validate_model_name(args.model) == "lstm":
+    model_name = validate_model_name(args.model)
+    if model_name == "lstm":
         return train_lstm.run_training(args)
+    if model_name == "attention_lstm":
+        return train_attention_lstm.run_training(args)
     return train_non_lstm(args)
 
 
