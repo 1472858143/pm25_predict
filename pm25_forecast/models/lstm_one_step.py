@@ -18,7 +18,7 @@ def require_torch():
         from torch import nn
     except ImportError as exc:
         raise RuntimeError(
-            "PyTorch is required for LSTM reproduction. "
+            "PyTorch is required for LSTM forecasting. "
             "Run with E:\\Enviroments\\miniconda3\\envs\\pm25\\python.exe or install torch in the active environment."
         ) from exc
     return torch, nn

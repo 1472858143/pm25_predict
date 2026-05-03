@@ -2,8 +2,8 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from Reproduce.scripts.prepare_data import parse_args
-from Reproduce.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW, experiment_name
+from pm25_forecast.scripts.prepare_data import parse_args
+from pm25_forecast.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW, experiment_name
 
 
 class PrepareDataContractTests(unittest.TestCase):

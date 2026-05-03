@@ -1,10 +1,11 @@
 from pathlib import Path
+import importlib.util
 import sys
 import unittest
 from unittest.mock import patch
 
-from Reproduce.utils.data_utils import experiment_name
-from Reproduce.utils.paths import (
+from pm25_forecast.utils.data_utils import experiment_name
+from pm25_forecast.utils.paths import (
     SUPPORTED_MODEL_NAMES,
     comparison_dir,
     data_dir,
@@ -17,6 +18,10 @@ from Reproduce.utils.paths import (
 
 
 class PathUtilityTests(unittest.TestCase):
+    def test_project_package_is_pm25_forecast(self):
+        self.assertIsNotNone(importlib.util.find_spec("pm25_forecast"))
+        self.assertIsNone(importlib.util.find_spec("Reproduce"))
+
     def test_window_experiment_name_replaces_lstm_name(self):
         self.assertEqual(window_experiment_name(720, 72), "window_720h_to_72h")
         self.assertEqual(experiment_name(720, 72), "window_720h_to_72h")
@@ -49,7 +54,7 @@ class PathUtilityTests(unittest.TestCase):
                 validate_model_name(model_name)
 
     def test_cli_parse_args_default_to_window_constants(self):
-        from Reproduce.scripts import predict_month, prepare_data, train_lstm
+        from pm25_forecast.scripts import predict_month, prepare_data, train_lstm
 
         parsers = (
             ("prepare_data", prepare_data.parse_args),
@@ -64,7 +69,7 @@ class PathUtilityTests(unittest.TestCase):
                 self.assertEqual(args.output_window, 72)
 
     def test_lstm_prediction_labels_include_dynamic_horizon(self):
-        from Reproduce.scripts.predict_month import prediction_plot_title, stage_metric_ranges
+        from pm25_forecast.scripts.predict_month import prediction_plot_title, stage_metric_ranges
 
         self.assertEqual(
             stage_metric_ranges(72),

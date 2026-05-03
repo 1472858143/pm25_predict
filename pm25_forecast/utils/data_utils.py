@@ -10,9 +10,9 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-REPRODUCE_ROOT = PROJECT_ROOT / "Reproduce"
+PACKAGE_ROOT = PROJECT_ROOT / "pm25_forecast"
 DEFAULT_DATA_PATH = PROJECT_ROOT / "data" / "processed_beijing.csv"
-DEFAULT_OUTPUT_ROOT = REPRODUCE_ROOT / "outputs"
+DEFAULT_OUTPUT_ROOT = PACKAGE_ROOT / "outputs"
 DEFAULT_PREDICT_START = "2026-03-01 00:00:00+08:00"
 DEFAULT_INPUT_WINDOW = 720
 DEFAULT_OUTPUT_WINDOW = 72

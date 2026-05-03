@@ -13,15 +13,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.models.statistical_models import (
+from pm25_forecast.models.statistical_models import (
     load_train_pm25_series,
     save_statistical_model,
     train_arima_model,
     train_sarima_model,
 )
-from Reproduce.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
-from Reproduce.scripts import train_lstm
-from Reproduce.utils.data_utils import (
+from pm25_forecast.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
+from pm25_forecast.scripts import train_lstm
+from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
@@ -31,7 +31,7 @@ from Reproduce.utils.data_utils import (
     read_json,
     write_json,
 )
-from Reproduce.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, validate_model_name, window_experiment_dir
+from pm25_forecast.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, validate_model_name, window_experiment_dir
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

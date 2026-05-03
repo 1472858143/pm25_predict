@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from Reproduce.models.statistical_models import forecast_statistical_model, load_train_pm25_series
+from pm25_forecast.models.statistical_models import forecast_statistical_model, load_train_pm25_series
 
 
 class _FakeForecastModel:

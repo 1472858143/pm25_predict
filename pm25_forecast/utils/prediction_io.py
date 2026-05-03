@@ -7,8 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.plotting import plot_error_curve, plot_prediction_curve, plot_scatter, write_plot_status
+from pm25_forecast.utils.metrics import regression_metrics
+from pm25_forecast.utils.plotting import plot_error_curve, plot_prediction_curve, plot_scatter, write_plot_status
 
 
 PREDICTION_COLUMNS = [

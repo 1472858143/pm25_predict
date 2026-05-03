@@ -2,7 +2,7 @@
 
 ## 背景
 
-当前项目已经实现 LSTM 对北京 PM2.5 的直接多步预测，但输出目录把窗口形状、模型名称、训练产物和预测产物混在同一层级，例如 `Reproduce/outputs/lstm_720h_to_24h/`。这会导致后续加入 XGBoost、RandomForest、ARIMA、SARIMA 后难以区分共享数据、单模型产物和跨模型对比结果。
+当前项目已经实现 LSTM 对北京 PM2.5 的直接多步预测，但输出目录把窗口形状、模型名称、训练产物和预测产物混在同一层级，例如 `pm25_forecast/outputs/lstm_720h_to_24h/`。这会导致后续加入 XGBoost、RandomForest、ARIMA、SARIMA 后难以区分共享数据、单模型产物和跨模型对比结果。
 
 本设计将实验窗口与模型运行拆分：窗口目录负责数据准备和时间切分，模型目录负责各自训练产物，预测目录按预测起点和模型分层，比较目录只保存横向汇总。
 
@@ -28,7 +28,7 @@
 新结果统一写入窗口实验目录：
 
 ```text
-Reproduce/outputs/window_720h_to_72h/
+pm25_forecast/outputs/window_720h_to_72h/
 ├── data/
 │   ├── windows.npz
 │   ├── scaler.json
@@ -60,7 +60,7 @@ Reproduce/outputs/window_720h_to_72h/
 - `predictions/start_<YYYY_MM_DD_HHMM>/<model_name>/` 保存单个模型在指定预测窗口上的预测结果。
 - `comparisons/start_<YYYY_MM_DD_HHMM>/` 保存多模型汇总结果。
 
-旧目录如 `Reproduce/outputs/lstm_720h_to_24h/` 不迁移、不删除，新脚本不再把它作为默认写入目标。
+旧目录如 `pm25_forecast/outputs/lstm_720h_to_24h/` 不迁移、不删除，新脚本不再把它作为默认写入目标。
 
 ## 模型口径
 
@@ -172,29 +172,29 @@ model_name,RMSE,MAE,MAPE,SMAPE,R2,bias,prediction_dir
 共享数据准备：
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 单模型训练：
 
 ```powershell
-python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
-python -m Reproduce.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
+python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 单模型预测：
 
 ```powershell
-python -m Reproduce.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
+python -m pm25_forecast.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
 ```
 
 模型对比：
 
 ```powershell
-python -m Reproduce.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 兼容策略：
@@ -208,13 +208,13 @@ python -m Reproduce.scripts.compare_models --models lstm xgboost random_forest a
 计划新增或调整：
 
 ```text
-Reproduce/models/tree_models.py
-Reproduce/models/statistical_models.py
-Reproduce/utils/paths.py
-Reproduce/utils/prediction_io.py
-Reproduce/scripts/train_model.py
-Reproduce/scripts/predict_model.py
-Reproduce/scripts/compare_models.py
+pm25_forecast/models/tree_models.py
+pm25_forecast/models/statistical_models.py
+pm25_forecast/utils/paths.py
+pm25_forecast/utils/prediction_io.py
+pm25_forecast/scripts/train_model.py
+pm25_forecast/scripts/predict_model.py
+pm25_forecast/scripts/compare_models.py
 ```
 
 职责：
@@ -243,16 +243,16 @@ Reproduce/scripts/compare_models.py
 可选人工 smoke：
 
 ```powershell
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5
-python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 1
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5
+python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 1
 ```
 
 ## 文档更新
 
 需要更新：
 
-- `Reproduce/README.md`
-- `Reproduce/REPRODUCTION_PLAN.md`
+- `pm25_forecast/README.md`
+- `pm25_forecast/REPRODUCTION_PLAN.md`
 
 文档必须明确：
 
@@ -264,9 +264,9 @@ python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output
 
 ## 验收标准
 
-- 数据准备默认写入 `Reproduce/outputs/window_720h_to_72h/data/`。
-- 每个模型训练产物写入 `Reproduce/outputs/window_720h_to_72h/models/<model_name>/`。
-- 每个模型预测结果写入 `Reproduce/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/`。
+- 数据准备默认写入 `pm25_forecast/outputs/window_720h_to_72h/data/`。
+- 每个模型训练产物写入 `pm25_forecast/outputs/window_720h_to_72h/models/<model_name>/`。
+- 每个模型预测结果写入 `pm25_forecast/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/`。
 - 每个模型的 `predictions.csv` 都包含固定字段和 `72` 行。
 - 汇总目录能生成每个模型一行的 `model_metrics.csv`。
 - `all_predictions.csv` 能按 `model_name` 区分不同模型预测结果。

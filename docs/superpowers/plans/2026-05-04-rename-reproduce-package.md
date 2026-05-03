@@ -1,8 +1,8 @@
-# Rename Reproduce Package Implementation Plan
+# Rename Package Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rename the Python package and project subdirectory from `Reproduce` to `pm25_forecast`.
+**Goal:** Rename the Python package and project subdirectory to `pm25_forecast`.
 
 **Architecture:** This is a package-level mechanical rename. The module layout remains unchanged under the new root, while imports, tests, docs, and default output-root constants move to `pm25_forecast`.
 
@@ -17,7 +17,7 @@
 
 - [ ] **Step 1: Write the failing test**
 
-Add assertions that `pm25_forecast` is importable and `Reproduce` is not importable in the project package namespace.
+Add assertions that `pm25_forecast` is importable and the legacy package name is not importable.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -28,16 +28,16 @@ Expected: fail before directory rename because `pm25_forecast` does not exist.
 ### Task 2: Rename Package and Imports
 
 **Files:**
-- Move: `Reproduce/` -> `pm25_forecast/`
+- Move: top-level package directory to `pm25_forecast/`
 - Modify: all Python files under `pm25_forecast/` and `tests/`
 
 - [ ] **Step 1: Rename the directory**
 
-Use `Move-Item -LiteralPath Reproduce -Destination pm25_forecast` after checking `pm25_forecast` does not already exist.
+Use `git mv` so Git tracks the package rename.
 
 - [ ] **Step 2: Replace imports**
 
-Replace exact module references from `Reproduce` to `pm25_forecast`.
+Replace exact module references with `pm25_forecast`.
 
 - [ ] **Step 3: Run unit tests**
 
@@ -55,7 +55,7 @@ Expected: all tests pass.
 
 - [ ] **Step 1: Replace docs references**
 
-Use exact text replacement for paths and commands where they describe the current project.
+Use exact text replacement for current paths and commands.
 
 - [ ] **Step 2: Verify CLI**
 

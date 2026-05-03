@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from Reproduce.models.tree_models import flatten_window_features, train_random_forest_model
+from pm25_forecast.models.tree_models import flatten_window_features, train_random_forest_model
 
 
 class TreeModelTests(unittest.TestCase):

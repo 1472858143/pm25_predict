@@ -12,9 +12,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.models.lstm_one_step import LSTMConfig, build_model, require_torch
-from Reproduce.utils.calibration import apply_calibration
-from Reproduce.utils.data_utils import (
+from pm25_forecast.models.lstm_one_step import LSTMConfig, build_model, require_torch
+from pm25_forecast.utils.calibration import apply_calibration
+from pm25_forecast.utils.data_utils import (
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
     DEFAULT_OUTPUT_WINDOW,
@@ -25,13 +25,13 @@ from Reproduce.utils.data_utils import (
     parse_predict_start,
     read_json,
 )
-from Reproduce.utils.paths import model_dir, prediction_dir, window_experiment_dir
-from Reproduce.utils.prediction_io import build_predictions_frame, write_prediction_outputs
+from pm25_forecast.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from pm25_forecast.utils.prediction_io import build_predictions_frame, write_prediction_outputs
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Predict one direct multi-output window with a trained LSTM.")
-    parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Reproduction outputs root.")
+    parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Forecasting outputs root.")
     parser.add_argument("--input-window", type=int, default=DEFAULT_INPUT_WINDOW)
     parser.add_argument("--output-window", type=int, default=DEFAULT_OUTPUT_WINDOW)
     parser.add_argument("--predict-start", default=DEFAULT_PREDICT_START, help="Prediction start timestamp.")

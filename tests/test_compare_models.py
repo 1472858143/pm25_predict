@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from Reproduce.scripts.compare_models import compare_existing_predictions
+from pm25_forecast.scripts.compare_models import compare_existing_predictions
 
 
 class CompareModelsTests(unittest.TestCase):

@@ -1,9 +1,9 @@
 from pathlib import Path
 import unittest
 
-from Reproduce.scripts.predict_month import checkpoint_path
-from Reproduce.scripts.train_lstm import resolve_lstm_training_paths
-from Reproduce.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from pm25_forecast.scripts.predict_month import checkpoint_path
+from pm25_forecast.scripts.train_lstm import resolve_lstm_training_paths
+from pm25_forecast.utils.paths import model_dir, prediction_dir, window_experiment_dir
 
 
 class LstmPathTests(unittest.TestCase):

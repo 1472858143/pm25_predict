@@ -12,35 +12,35 @@
 
 ## File Structure
 
-- Create: `Reproduce/utils/paths.py`  
+- Create: `pm25_forecast/utils/paths.py`
   统一生成窗口实验目录、模型目录、预测目录、比较目录和支持的模型名。
-- Create: `Reproduce/utils/prediction_io.py`  
+- Create: `pm25_forecast/utils/prediction_io.py`
   统一写出 `predictions.csv`、指标 JSON/CSV、stage 指标、图像和 `prediction_summary.json`。
-- Create: `Reproduce/models/tree_models.py`  
+- Create: `pm25_forecast/models/tree_models.py`
   封装 XGBoost、RandomForest 的展平输入、训练、保存、加载和预测。
-- Create: `Reproduce/models/statistical_models.py`  
+- Create: `pm25_forecast/models/statistical_models.py`
   封装 ARIMA、SARIMA 的单变量训练、保存、加载和预测。
-- Create: `Reproduce/scripts/train_model.py`  
+- Create: `pm25_forecast/scripts/train_model.py`
   通用训练入口，按 `--model` 分发。
-- Create: `Reproduce/scripts/predict_model.py`  
+- Create: `pm25_forecast/scripts/predict_model.py`
   通用预测入口，按 `--model` 分发并调用统一输出。
-- Create: `Reproduce/scripts/compare_models.py`  
+- Create: `pm25_forecast/scripts/compare_models.py`
   汇总多个模型已有预测结果。
-- Modify: `Reproduce/utils/data_utils.py`  
+- Modify: `pm25_forecast/utils/data_utils.py`
   默认 `output_window` 改为 72，`experiment_name()` 改为窗口目录命名，数据产物写入 `window_<input>h_to_<output>h/data/`。
-- Modify: `Reproduce/scripts/prepare_data.py`  
+- Modify: `pm25_forecast/scripts/prepare_data.py`
   默认输出窗口改为 72，打印窗口实验名。
-- Modify: `Reproduce/scripts/train_lstm.py`  
+- Modify: `pm25_forecast/scripts/train_lstm.py`
   增加可复用 `build_arg_parser()` 和 `run_training(args)`，把模型产物写入 `models/lstm/`。
-- Modify: `Reproduce/scripts/predict_month.py`  
+- Modify: `pm25_forecast/scripts/predict_month.py`
   增加可复用 `run_lstm_prediction(args)` 或调整现有 `run_prediction(args)`，把预测结果写入 `predictions/<start>/lstm/`。
-- Modify: `Reproduce/scripts/predict_window.py`  
+- Modify: `pm25_forecast/scripts/predict_window.py`
   继续作为 LSTM 预测别名。
-- Modify: `Reproduce/scripts/evaluate_lstm.py`  
+- Modify: `pm25_forecast/scripts/evaluate_lstm.py`
   继续作为 LSTM 预测别名。
-- Modify: `Reproduce/README.md`  
+- Modify: `pm25_forecast/README.md`
   更新默认 `720h -> 72h`、模型口径、命令和输出目录。
-- Modify: `Reproduce/REPRODUCTION_PLAN.md`  
+- Modify: `pm25_forecast/REPRODUCTION_PLAN.md`
   更新实验计划、输出结构和验收标准。
 - Create: `tests/__init__.py`
 - Create: `tests/test_paths.py`
@@ -54,8 +54,8 @@
 ### Task 1: 路径工具与窗口实验命名
 
 **Files:**
-- Create: `Reproduce/utils/paths.py`
-- Modify: `Reproduce/utils/data_utils.py`
+- Create: `pm25_forecast/utils/paths.py`
+- Modify: `pm25_forecast/utils/data_utils.py`
 - Create: `tests/__init__.py`
 - Create: `tests/test_paths.py`
 
@@ -69,8 +69,8 @@ Create `tests/test_paths.py`:
 from pathlib import Path
 import unittest
 
-from Reproduce.utils.data_utils import experiment_name
-from Reproduce.utils.paths import (
+from pm25_forecast.utils.data_utils import experiment_name
+from pm25_forecast.utils.paths import (
     SUPPORTED_MODEL_NAMES,
     comparison_dir,
     data_dir,
@@ -120,18 +120,18 @@ Run:
 python -m unittest tests.test_paths -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.utils.paths'` or assertion failure because `experiment_name(720, 72)` still returns `lstm_720h_to_72h`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.utils.paths'` or assertion failure because `experiment_name(720, 72)` still returns `lstm_720h_to_72h`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/utils/paths.py`:
+Create `pm25_forecast/utils/paths.py`:
 
 ```python
 from __future__ import annotations
 
 from pathlib import Path
 
-from Reproduce.utils.data_utils import parse_predict_start, safe_timestamp_label
+from pm25_forecast.utils.data_utils import parse_predict_start, safe_timestamp_label
 
 
 SUPPORTED_MODEL_NAMES = ("lstm", "xgboost", "random_forest", "arima", "sarima")
@@ -177,7 +177,7 @@ def comparison_dir(experiment_dir: str | Path, predict_start: str) -> Path:
     return Path(experiment_dir) / "comparisons" / start_dir_name(predict_start)
 ```
 
-Modify `Reproduce/utils/data_utils.py`:
+Modify `pm25_forecast/utils/data_utils.py`:
 
 ```python
 DEFAULT_INPUT_WINDOW = 720
@@ -213,7 +213,7 @@ Expected: PASS with 3 tests.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/utils/paths.py Reproduce/utils/data_utils.py tests/__init__.py tests/test_paths.py
+git add pm25_forecast/utils/paths.py pm25_forecast/utils/data_utils.py tests/__init__.py tests/test_paths.py
 git commit -m "refactor: add window experiment path utilities"
 ```
 
@@ -222,7 +222,7 @@ git commit -m "refactor: add window experiment path utilities"
 ### Task 2: 统一预测输出写入层
 
 **Files:**
-- Create: `Reproduce/utils/prediction_io.py`
+- Create: `pm25_forecast/utils/prediction_io.py`
 - Create: `tests/test_prediction_io.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -238,7 +238,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.prediction_io import PREDICTION_COLUMNS, build_predictions_frame, write_prediction_outputs
+from pm25_forecast.utils.prediction_io import PREDICTION_COLUMNS, build_predictions_frame, write_prediction_outputs
 
 
 class PredictionIoTests(unittest.TestCase):
@@ -305,11 +305,11 @@ Run:
 python -m unittest tests.test_prediction_io -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.utils.prediction_io'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.utils.prediction_io'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/utils/prediction_io.py`:
+Create `pm25_forecast/utils/prediction_io.py`:
 
 ```python
 from __future__ import annotations
@@ -320,9 +320,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.data_utils import parse_predict_start, write_json
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.plotting import plot_error_curve, plot_prediction_curve, plot_scatter, write_plot_status
+from pm25_forecast.utils.data_utils import parse_predict_start, write_json
+from pm25_forecast.utils.metrics import regression_metrics
+from pm25_forecast.utils.plotting import plot_error_curve, plot_prediction_curve, plot_scatter, write_plot_status
 
 
 PREDICTION_COLUMNS = [
@@ -484,7 +484,7 @@ Expected: PASS with 2 tests.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/utils/prediction_io.py tests/test_prediction_io.py
+git add pm25_forecast/utils/prediction_io.py tests/test_prediction_io.py
 git commit -m "feat: add shared prediction output writer"
 ```
 
@@ -493,8 +493,8 @@ git commit -m "feat: add shared prediction output writer"
 ### Task 3: 数据准备默认窗口和输出目录迁移
 
 **Files:**
-- Modify: `Reproduce/utils/data_utils.py`
-- Modify: `Reproduce/scripts/prepare_data.py`
+- Modify: `pm25_forecast/utils/data_utils.py`
+- Modify: `pm25_forecast/scripts/prepare_data.py`
 - Create: `tests/test_prepare_data_contract.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -504,8 +504,8 @@ Create `tests/test_prepare_data_contract.py`:
 ```python
 import unittest
 
-from Reproduce.scripts.prepare_data import parse_args
-from Reproduce.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW, experiment_name
+from pm25_forecast.scripts.prepare_data import parse_args
+from pm25_forecast.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW, experiment_name
 
 
 class PrepareDataContractTests(unittest.TestCase):
@@ -535,10 +535,10 @@ Expected: FAIL because `DEFAULT_INPUT_WINDOW` and `DEFAULT_OUTPUT_WINDOW` are no
 
 - [ ] **Step 3: Write minimal implementation**
 
-Modify imports and parser defaults in `Reproduce/scripts/prepare_data.py`:
+Modify imports and parser defaults in `pm25_forecast/scripts/prepare_data.py`:
 
 ```python
-from Reproduce.utils.data_utils import (
+from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
@@ -553,7 +553,7 @@ parser.add_argument("--input-window", type=int, default=DEFAULT_INPUT_WINDOW, he
 parser.add_argument("--output-window", type=int, default=DEFAULT_OUTPUT_WINDOW, help="Direct forecast horizon in hours.")
 ```
 
-Ensure `prepare_data_bundle()` in `Reproduce/utils/data_utils.py` builds:
+Ensure `prepare_data_bundle()` in `pm25_forecast/utils/data_utils.py` builds:
 
 ```python
 exp_name = experiment_name(input_window, output_window)
@@ -576,7 +576,7 @@ Expected: PASS with 2 tests.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/utils/data_utils.py Reproduce/scripts/prepare_data.py tests/test_prepare_data_contract.py
+git add pm25_forecast/utils/data_utils.py pm25_forecast/scripts/prepare_data.py tests/test_prepare_data_contract.py
 git commit -m "refactor: default data preparation to 72 hour window"
 ```
 
@@ -585,10 +585,10 @@ git commit -m "refactor: default data preparation to 72 hour window"
 ### Task 4: LSTM 训练和预测迁移到模型子目录
 
 **Files:**
-- Modify: `Reproduce/scripts/train_lstm.py`
-- Modify: `Reproduce/scripts/predict_month.py`
-- Modify: `Reproduce/scripts/predict_window.py`
-- Modify: `Reproduce/scripts/evaluate_lstm.py`
+- Modify: `pm25_forecast/scripts/train_lstm.py`
+- Modify: `pm25_forecast/scripts/predict_month.py`
+- Modify: `pm25_forecast/scripts/predict_window.py`
+- Modify: `pm25_forecast/scripts/evaluate_lstm.py`
 - Create: `tests/test_lstm_paths.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -599,8 +599,8 @@ Create `tests/test_lstm_paths.py`:
 from pathlib import Path
 import unittest
 
-from Reproduce.scripts.predict_month import checkpoint_path
-from Reproduce.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from pm25_forecast.scripts.predict_month import checkpoint_path
+from pm25_forecast.utils.paths import model_dir, prediction_dir, window_experiment_dir
 
 
 class LstmPathTests(unittest.TestCase):
@@ -633,11 +633,11 @@ Expected: FAIL because `checkpoint_path()` still expects the old experiment dire
 
 - [ ] **Step 3: Write minimal implementation**
 
-Modify `Reproduce/scripts/train_lstm.py`:
+Modify `pm25_forecast/scripts/train_lstm.py`:
 
 ```python
-from Reproduce.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW
-from Reproduce.utils.paths import model_dir, window_experiment_dir
+from pm25_forecast.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_WINDOW
+from pm25_forecast.utils.paths import model_dir, window_experiment_dir
 ```
 
 In parser defaults:
@@ -678,11 +678,11 @@ pd.DataFrame(calibration["horizon_stats"]).to_csv(
 write_json(lstm_dir / "training_config.json", training_config)
 ```
 
-Modify `Reproduce/scripts/predict_month.py`:
+Modify `pm25_forecast/scripts/predict_month.py`:
 
 ```python
-from Reproduce.utils.paths import model_dir, prediction_dir, window_experiment_dir
-from Reproduce.utils.prediction_io import build_predictions_frame, write_prediction_outputs
+from pm25_forecast.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from pm25_forecast.utils.prediction_io import build_predictions_frame, write_prediction_outputs
 ```
 
 Change `checkpoint_path()` to accept the LSTM model directory:
@@ -752,7 +752,7 @@ Expected: PASS with 2 tests.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/scripts/train_lstm.py Reproduce/scripts/predict_month.py Reproduce/scripts/predict_window.py Reproduce/scripts/evaluate_lstm.py tests/test_lstm_paths.py
+git add pm25_forecast/scripts/train_lstm.py pm25_forecast/scripts/predict_month.py pm25_forecast/scripts/predict_window.py pm25_forecast/scripts/evaluate_lstm.py tests/test_lstm_paths.py
 git commit -m "refactor: write lstm artifacts under model subdirectories"
 ```
 
@@ -761,7 +761,7 @@ git commit -m "refactor: write lstm artifacts under model subdirectories"
 ### Task 5: 树模型封装
 
 **Files:**
-- Create: `Reproduce/models/tree_models.py`
+- Create: `pm25_forecast/models/tree_models.py`
 - Create: `tests/test_tree_models.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -773,7 +773,7 @@ import unittest
 
 import numpy as np
 
-from Reproduce.models.tree_models import flatten_window_features, train_random_forest_model
+from pm25_forecast.models.tree_models import flatten_window_features, train_random_forest_model
 
 
 class TreeModelTests(unittest.TestCase):
@@ -804,11 +804,11 @@ Run:
 python -m unittest tests.test_tree_models -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.models.tree_models'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.models.tree_models'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/models/tree_models.py`:
+Create `pm25_forecast/models/tree_models.py`:
 
 ```python
 from __future__ import annotations
@@ -913,7 +913,7 @@ Expected: PASS with 2 tests if scikit-learn is installed. If scikit-learn is mis
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/models/tree_models.py tests/test_tree_models.py
+git add pm25_forecast/models/tree_models.py tests/test_tree_models.py
 git commit -m "feat: add tree model wrappers"
 ```
 
@@ -922,7 +922,7 @@ git commit -m "feat: add tree model wrappers"
 ### Task 6: ARIMA/SARIMA 单变量模型封装
 
 **Files:**
-- Create: `Reproduce/models/statistical_models.py`
+- Create: `pm25_forecast/models/statistical_models.py`
 - Create: `tests/test_statistical_models.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -937,7 +937,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from Reproduce.models.statistical_models import load_train_pm25_series
+from pm25_forecast.models.statistical_models import load_train_pm25_series
 
 
 class StatisticalModelTests(unittest.TestCase):
@@ -978,11 +978,11 @@ Run:
 python -m unittest tests.test_statistical_models -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.models.statistical_models'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.models.statistical_models'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/models/statistical_models.py`:
+Create `pm25_forecast/models/statistical_models.py`:
 
 ```python
 from __future__ import annotations
@@ -994,7 +994,7 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.data_utils import TARGET_COLUMN, fill_missing_values, load_beijing_data
+from pm25_forecast.utils.data_utils import TARGET_COLUMN, fill_missing_values, load_beijing_data
 
 
 def load_train_pm25_series(data_config: dict[str, Any]) -> np.ndarray:
@@ -1069,7 +1069,7 @@ Expected: PASS with 1 test.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/models/statistical_models.py tests/test_statistical_models.py
+git add pm25_forecast/models/statistical_models.py tests/test_statistical_models.py
 git commit -m "feat: add univariate statistical model wrappers"
 ```
 
@@ -1078,8 +1078,8 @@ git commit -m "feat: add univariate statistical model wrappers"
 ### Task 7: 通用训练入口
 
 **Files:**
-- Create: `Reproduce/scripts/train_model.py`
-- Modify: `Reproduce/scripts/train_lstm.py`
+- Create: `pm25_forecast/scripts/train_model.py`
+- Modify: `pm25_forecast/scripts/train_lstm.py`
 - Create: `tests/test_train_model_cli.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1089,7 +1089,7 @@ Create `tests/test_train_model_cli.py`:
 ```python
 import unittest
 
-from Reproduce.scripts.train_model import build_arg_parser
+from pm25_forecast.scripts.train_model import build_arg_parser
 
 
 class TrainModelCliTests(unittest.TestCase):
@@ -1120,11 +1120,11 @@ Run:
 python -m unittest tests.test_train_model_cli -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.scripts.train_model'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.scripts.train_model'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Refactor `Reproduce/scripts/train_lstm.py`:
+Refactor `pm25_forecast/scripts/train_lstm.py`:
 
 ```python
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -1155,7 +1155,7 @@ def main() -> None:
     run_training(parse_args())
 ```
 
-Create `Reproduce/scripts/train_model.py`:
+Create `pm25_forecast/scripts/train_model.py`:
 
 ```python
 from __future__ import annotations
@@ -1173,10 +1173,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.models.statistical_models import load_train_pm25_series, save_statistical_model, train_arima_model, train_sarima_model
-from Reproduce.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
-from Reproduce.scripts import train_lstm
-from Reproduce.utils.data_utils import (
+from pm25_forecast.models.statistical_models import load_train_pm25_series, save_statistical_model, train_arima_model, train_sarima_model
+from pm25_forecast.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
+from pm25_forecast.scripts import train_lstm
+from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
@@ -1186,7 +1186,7 @@ from Reproduce.utils.data_utils import (
     read_json,
     write_json,
 )
-from Reproduce.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, validate_model_name, window_experiment_dir
+from pm25_forecast.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, validate_model_name, window_experiment_dir
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -1288,7 +1288,7 @@ Expected: PASS with 2 tests.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/scripts/train_model.py Reproduce/scripts/train_lstm.py tests/test_train_model_cli.py
+git add pm25_forecast/scripts/train_model.py pm25_forecast/scripts/train_lstm.py tests/test_train_model_cli.py
 git commit -m "feat: add unified model training entrypoint"
 ```
 
@@ -1297,8 +1297,8 @@ git commit -m "feat: add unified model training entrypoint"
 ### Task 8: 通用预测入口
 
 **Files:**
-- Create: `Reproduce/scripts/predict_model.py`
-- Modify: `Reproduce/scripts/predict_month.py`
+- Create: `pm25_forecast/scripts/predict_model.py`
+- Modify: `pm25_forecast/scripts/predict_month.py`
 - Create: `tests/test_predict_model_cli.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1308,7 +1308,7 @@ Create `tests/test_predict_model_cli.py`:
 ```python
 import unittest
 
-from Reproduce.scripts.predict_model import build_arg_parser
+from pm25_forecast.scripts.predict_model import build_arg_parser
 
 
 class PredictModelCliTests(unittest.TestCase):
@@ -1331,11 +1331,11 @@ Run:
 python -m unittest tests.test_predict_model_cli -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.scripts.predict_model'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.scripts.predict_model'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/scripts/predict_model.py`:
+Create `pm25_forecast/scripts/predict_model.py`:
 
 ```python
 from __future__ import annotations
@@ -1352,12 +1352,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.models.statistical_models import forecast_statistical_model, load_statistical_model
-from Reproduce.models.tree_models import load_tree_model, predict_tree_model
-from Reproduce.scripts import predict_month
-from Reproduce.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_ROOT, DEFAULT_OUTPUT_WINDOW, DEFAULT_PREDICT_START, prepare_data_bundle
-from Reproduce.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, prediction_dir, validate_model_name, window_experiment_dir
-from Reproduce.utils.prediction_io import build_predictions_frame, write_prediction_outputs
+from pm25_forecast.models.statistical_models import forecast_statistical_model, load_statistical_model
+from pm25_forecast.models.tree_models import load_tree_model, predict_tree_model
+from pm25_forecast.scripts import predict_month
+from pm25_forecast.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_ROOT, DEFAULT_OUTPUT_WINDOW, DEFAULT_PREDICT_START, prepare_data_bundle
+from pm25_forecast.utils.paths import SUPPORTED_MODEL_NAMES, model_dir, prediction_dir, validate_model_name, window_experiment_dir
+from pm25_forecast.utils.prediction_io import build_predictions_frame, write_prediction_outputs
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -1449,7 +1449,7 @@ Expected: PASS with 1 test.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/scripts/predict_model.py Reproduce/scripts/predict_month.py tests/test_predict_model_cli.py
+git add pm25_forecast/scripts/predict_model.py pm25_forecast/scripts/predict_month.py tests/test_predict_model_cli.py
 git commit -m "feat: add unified model prediction entrypoint"
 ```
 
@@ -1458,7 +1458,7 @@ git commit -m "feat: add unified model prediction entrypoint"
 ### Task 9: 多模型比较汇总
 
 **Files:**
-- Create: `Reproduce/scripts/compare_models.py`
+- Create: `pm25_forecast/scripts/compare_models.py`
 - Create: `tests/test_compare_models.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1472,7 +1472,7 @@ import unittest
 
 import pandas as pd
 
-from Reproduce.scripts.compare_models import compare_existing_predictions
+from pm25_forecast.scripts.compare_models import compare_existing_predictions
 
 
 class CompareModelsTests(unittest.TestCase):
@@ -1521,11 +1521,11 @@ Run:
 python -m unittest tests.test_compare_models -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'Reproduce.scripts.compare_models'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'pm25_forecast.scripts.compare_models'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Create `Reproduce/scripts/compare_models.py`:
+Create `pm25_forecast/scripts/compare_models.py`:
 
 ```python
 from __future__ import annotations
@@ -1542,9 +1542,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_ROOT, DEFAULT_OUTPUT_WINDOW, DEFAULT_PREDICT_START, write_json
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.paths import SUPPORTED_MODEL_NAMES, comparison_dir, prediction_dir, validate_model_name, window_experiment_dir
+from pm25_forecast.utils.data_utils import DEFAULT_INPUT_WINDOW, DEFAULT_OUTPUT_ROOT, DEFAULT_OUTPUT_WINDOW, DEFAULT_PREDICT_START, write_json
+from pm25_forecast.utils.metrics import regression_metrics
+from pm25_forecast.utils.paths import SUPPORTED_MODEL_NAMES, comparison_dir, prediction_dir, validate_model_name, window_experiment_dir
 
 
 def compare_existing_predictions(experiment_dir: str | Path, predict_start: str, models: Iterable[str]) -> Path:
@@ -1612,7 +1612,7 @@ Expected: PASS with 1 test.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/scripts/compare_models.py tests/test_compare_models.py
+git add pm25_forecast/scripts/compare_models.py tests/test_compare_models.py
 git commit -m "feat: add model comparison output aggregation"
 ```
 
@@ -1621,49 +1621,49 @@ git commit -m "feat: add model comparison output aggregation"
 ### Task 10: 文档更新与入口兼容检查
 
 **Files:**
-- Modify: `Reproduce/README.md`
-- Modify: `Reproduce/REPRODUCTION_PLAN.md`
+- Modify: `pm25_forecast/README.md`
+- Modify: `pm25_forecast/REPRODUCTION_PLAN.md`
 
 - [ ] **Step 1: Write the failing documentation check**
 
 Run:
 
 ```powershell
-rg -n "lstm_720h_to_24h|--output-window 24|未来 24|24h" Reproduce/README.md Reproduce/REPRODUCTION_PLAN.md
+rg -n "lstm_720h_to_24h|--output-window 24|未来 24|24h" pm25_forecast/README.md pm25_forecast/REPRODUCTION_PLAN.md
 ```
 
 Expected: FIND matches showing old default wording remains in docs.
 
 - [ ] **Step 2: Update README**
 
-Update `Reproduce/README.md` so it includes these exact command examples:
+Update `pm25_forecast/README.md` so it includes these exact command examples:
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
-python -m Reproduce.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
-python -m Reproduce.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
+python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
+python -m pm25_forecast.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 Document the output root:
 
 ```text
-Reproduce/outputs/window_720h_to_72h/
+pm25_forecast/outputs/window_720h_to_72h/
 ```
 
 Document the model-specific prediction path:
 
 ```text
-Reproduce/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/
+pm25_forecast/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/
 ```
 
 - [ ] **Step 3: Update reproduction plan**
 
-Update `Reproduce/REPRODUCTION_PLAN.md` so it states:
+Update `pm25_forecast/REPRODUCTION_PLAN.md` so it states:
 
 ```text
 默认实验：过去 720 小时 -> 未来 72 小时 PM2.5
@@ -1674,7 +1674,7 @@ ARIMA、SARIMA 只使用训练期历史 pm25，不使用外生特征，不使用
 Add this expected output tree:
 
 ```text
-Reproduce/outputs/window_720h_to_72h/
+pm25_forecast/outputs/window_720h_to_72h/
 ├── data/
 ├── models/<model_name>/
 ├── predictions/start_2026_03_01_0000/<model_name>/
@@ -1686,7 +1686,7 @@ Reproduce/outputs/window_720h_to_72h/
 Run:
 
 ```powershell
-rg -n "lstm_720h_to_24h|--output-window 24|未来 24|24h" Reproduce/README.md Reproduce/REPRODUCTION_PLAN.md
+rg -n "lstm_720h_to_24h|--output-window 24|未来 24|24h" pm25_forecast/README.md pm25_forecast/REPRODUCTION_PLAN.md
 ```
 
 Expected: no matches for old default text unless explicitly labeled as historical output.
@@ -1694,7 +1694,7 @@ Expected: no matches for old default text unless explicitly labeled as historica
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add Reproduce/README.md Reproduce/REPRODUCTION_PLAN.md
+git add pm25_forecast/README.md pm25_forecast/REPRODUCTION_PLAN.md
 git commit -m "docs: document multi-model comparison workflow"
 ```
 
@@ -1720,12 +1720,12 @@ Expected: PASS for all tests.
 Run:
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --help
-python -m Reproduce.scripts.train_model --help
-python -m Reproduce.scripts.predict_model --help
-python -m Reproduce.scripts.compare_models --help
-python -m Reproduce.scripts.train_lstm --help
-python -m Reproduce.scripts.predict_window --help
+python -m pm25_forecast.scripts.prepare_data --help
+python -m pm25_forecast.scripts.train_model --help
+python -m pm25_forecast.scripts.predict_model --help
+python -m pm25_forecast.scripts.compare_models --help
+python -m pm25_forecast.scripts.train_lstm --help
+python -m pm25_forecast.scripts.predict_window --help
 ```
 
 Expected: each command exits 0 and prints usage.
@@ -1735,7 +1735,7 @@ Expected: each command exits 0 and prints usage.
 Run in the `pm25` conda environment:
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 Expected:
@@ -1744,21 +1744,21 @@ Expected:
 Prepared data for window_720h_to_72h
 ```
 
-and `Reproduce/outputs/window_720h_to_72h/data/windows.npz` exists.
+and `pm25_forecast/outputs/window_720h_to_72h/data/windows.npz` exists.
 
 - [ ] **Step 4: Run fast random forest smoke**
 
 Run:
 
 ```powershell
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5 --n-jobs 1
-python -m Reproduce.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5 --n-jobs 1
+python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 Expected:
 
 ```text
-Output dir: E:\pm25_predict\Reproduce\outputs\window_720h_to_72h\predictions\start_2026_03_01_0000\random_forest
+Output dir: E:\pm25_predict\pm25_forecast\outputs\window_720h_to_72h\predictions\start_2026_03_01_0000\random_forest
 ```
 
 and `predictions.csv` has 72 rows.
@@ -1768,7 +1768,7 @@ and `predictions.csv` has 72 rows.
 Run after at least two model prediction directories exist:
 
 ```powershell
-python -m Reproduce.scripts.compare_models --models random_forest lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.compare_models --models random_forest lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 Expected: if both predictions exist, writes `model_metrics.csv` and `all_predictions.csv`; if LSTM prediction does not exist yet, fails with a clear missing file path.
@@ -1778,7 +1778,7 @@ Expected: if both predictions exist, writes `model_metrics.csv` and `all_predict
 If verification required small fixes:
 
 ```powershell
-git add Reproduce tests
+git add pm25_forecast tests
 git commit -m "test: verify multi-model output workflow"
 ```
 

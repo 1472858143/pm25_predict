@@ -39,7 +39,7 @@
 ## 3. 输出规划
 
 ```text
-Reproduce/outputs/window_720h_to_72h/
+pm25_forecast/outputs/window_720h_to_72h/
 ├── data/
 │   ├── windows.npz
 │   ├── scaler.json
@@ -72,37 +72,37 @@ model_name,sample_id,origin_timestamp,target_end_timestamp,timestamp,horizon,y_t
 数据准备：
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 训练：
 
 ```powershell
-python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
-python -m Reproduce.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
+python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 预测：
 
 ```powershell
-python -m Reproduce.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
-python -m Reproduce.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
+python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 比较：
 
 ```powershell
-python -m Reproduce.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 ## 5. 验收标准
 
-- 数据准备默认写入 `Reproduce/outputs/window_720h_to_72h/data/`。
-- 每个模型训练产物写入 `Reproduce/outputs/window_720h_to_72h/models/<model_name>/`。
-- 每个模型预测结果写入 `Reproduce/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/`。
+- 数据准备默认写入 `pm25_forecast/outputs/window_720h_to_72h/data/`。
+- 每个模型训练产物写入 `pm25_forecast/outputs/window_720h_to_72h/models/<model_name>/`。
+- 每个模型预测结果写入 `pm25_forecast/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/`。
 - 每个模型的 `predictions.csv` 包含固定字段和 `72` 行。
 - 汇总目录生成每个模型一行的 `model_metrics.csv`。
 - `all_predictions.csv` 可按 `model_name` 区分不同模型结果。

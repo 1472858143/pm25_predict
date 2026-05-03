@@ -45,7 +45,7 @@ data/processed_beijing.csv
 新实验结果统一写入窗口实验目录：
 
 ```text
-Reproduce/outputs/window_720h_to_72h/
+pm25_forecast/outputs/window_720h_to_72h/
 ├── data/
 ├── models/
 │   ├── lstm/
@@ -63,7 +63,7 @@ Reproduce/outputs/window_720h_to_72h/
 单模型预测目录：
 
 ```text
-Reproduce/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/
+pm25_forecast/outputs/window_720h_to_72h/predictions/start_2026_03_01_0000/<model_name>/
 ```
 
 关键文件：
@@ -89,7 +89,7 @@ model_name,sample_id,origin_timestamp,target_end_timestamp,timestamp,horizon,y_t
 跨模型比较目录：
 
 ```text
-Reproduce/outputs/window_720h_to_72h/comparisons/start_2026_03_01_0000/
+pm25_forecast/outputs/window_720h_to_72h/comparisons/start_2026_03_01_0000/
 ├── model_metrics.csv
 ├── model_metrics.json
 └── all_predictions.csv
@@ -109,37 +109,37 @@ python -c "import sys, torch; print(sys.executable); print(torch.cuda.is_availab
 准备共享窗口数据：
 
 ```powershell
-python -m Reproduce.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.prepare_data --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 训练各模型：
 
 ```powershell
-python -m Reproduce.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
-python -m Reproduce.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m Reproduce.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --epochs 100
+python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 预测单个模型：
 
 ```powershell
-python -m Reproduce.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
-python -m Reproduce.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
+python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 汇总已有预测结果：
 
 ```powershell
-python -m Reproduce.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.compare_models --models lstm xgboost random_forest arima sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 快速 smoke：
 
 ```powershell
-python -m Reproduce.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5 --n-jobs 1
-python -m Reproduce.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --n-estimators 5 --n-jobs 1
+python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 ## 5. 注意事项

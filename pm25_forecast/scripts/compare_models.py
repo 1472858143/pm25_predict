@@ -12,15 +12,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.utils.data_utils import (
+from pm25_forecast.utils.data_utils import (
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
     DEFAULT_OUTPUT_WINDOW,
     DEFAULT_PREDICT_START,
     write_json,
 )
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.paths import (
+from pm25_forecast.utils.metrics import regression_metrics
+from pm25_forecast.utils.paths import (
     SUPPORTED_MODEL_NAMES,
     comparison_dir,
     prediction_dir,

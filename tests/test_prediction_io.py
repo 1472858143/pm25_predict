@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.prediction_io import PREDICTION_COLUMNS, build_predictions_frame, write_prediction_outputs
+from pm25_forecast.utils.prediction_io import PREDICTION_COLUMNS, build_predictions_frame, write_prediction_outputs
 
 
 class PredictionIoTests(unittest.TestCase):

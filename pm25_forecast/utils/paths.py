@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from Reproduce.utils.data_utils import parse_predict_start, safe_timestamp_label
+from pm25_forecast.utils.data_utils import parse_predict_start, safe_timestamp_label
 
 
 SUPPORTED_MODEL_NAMES = ("lstm", "xgboost", "random_forest", "arima", "sarima")

@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from Reproduce.utils.data_utils import TARGET_COLUMN, fill_missing_values, load_beijing_data
+from pm25_forecast.utils.data_utils import TARGET_COLUMN, fill_missing_values, load_beijing_data
 
 
 def load_train_pm25_series(data_config: dict[str, Any]) -> np.ndarray:

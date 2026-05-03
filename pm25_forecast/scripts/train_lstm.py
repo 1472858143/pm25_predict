@@ -14,9 +14,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Reproduce.models.lstm_one_step import LSTMConfig, build_model, require_torch
-from Reproduce.utils.calibration import apply_calibration, fit_horizon_linear_calibration
-from Reproduce.utils.data_utils import (
+from pm25_forecast.models.lstm_one_step import LSTMConfig, build_model, require_torch
+from pm25_forecast.utils.calibration import apply_calibration, fit_horizon_linear_calibration
+from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
@@ -28,14 +28,14 @@ from Reproduce.utils.data_utils import (
     read_json,
     write_json,
 )
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.paths import model_dir, window_experiment_dir
+from pm25_forecast.utils.metrics import regression_metrics
+from pm25_forecast.utils.paths import model_dir, window_experiment_dir
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train direct multi-output LSTM for PM2.5 reproduction.")
+    parser = argparse.ArgumentParser(description="Train direct multi-output LSTM for PM2.5 forecasting.")
     parser.add_argument("--data-path", default=str(DEFAULT_DATA_PATH), help="Input CSV path.")
-    parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Reproduction outputs root.")
+    parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Forecasting outputs root.")
     parser.add_argument("--input-window", type=int, default=DEFAULT_INPUT_WINDOW, help="Historical input window in hours.")
     parser.add_argument("--output-window", type=int, default=DEFAULT_OUTPUT_WINDOW, help="Direct forecast horizon in hours.")
     parser.add_argument("--predict-start", default=DEFAULT_PREDICT_START, help="Prediction start timestamp.")

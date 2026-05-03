@@ -1,6 +1,6 @@
 import unittest
 
-from Reproduce.scripts.predict_model import build_arg_parser
+from pm25_forecast.scripts.predict_model import build_arg_parser
 
 
 class PredictModelCliTests(unittest.TestCase):
