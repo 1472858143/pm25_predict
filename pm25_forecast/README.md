@@ -119,7 +119,7 @@ python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --ou
 python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --sarima-auto --seasonal-period 24 --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 预测单个模型：
@@ -142,7 +142,24 @@ python -m pm25_forecast.scripts.train_model --model random_forest --input-window
 python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
-## 5. 注意事项
+## 5. SARIMA 调参
+
+SARIMA 默认使用 `--sarima-auto` 通过 pmdarima.auto_arima 自动选择最优参数。可通过 `--seasonal-period` 指定季节周期（默认 24 小时）。
+
+```powershell
+# 自动选参（推荐）
+python -m pm25_forecast.scripts.train_model --model sarima --sarima-auto --seasonal-period 24 ...
+
+# 尝试不同季节周期
+python -m pm25_forecast.scripts.train_model --model sarima --sarima-auto --seasonal-period 12 ...
+
+# 手动指定参数（传统方式）
+python -m pm25_forecast.scripts.train_model --model sarima --sarima-order 1 1 1 --sarima-seasonal-order 1 0 1 24 ...
+```
+
+自动选参结果记录在 `models/sarima/training_config.json` 的 `training.auto_arima` 字段中，包含最优 order、seasonal_order 和 AIC 值。
+
+## 6. 注意事项
 
 - 推荐使用 `train_model.py`、`predict_model.py`、`compare_models.py` 作为新入口。
 - `train_lstm.py`、`predict_window.py`、`predict_month.py` 保留为 LSTM 兼容入口，输出也进入新结构。

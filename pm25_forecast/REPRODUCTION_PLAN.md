@@ -14,7 +14,7 @@
 - `XGBoost`：6 特征窗口展平后直接多输出预测。
 - `RandomForest`：6 特征窗口展平后直接多输出预测。
 - `ARIMA`：只使用训练期历史 `pm25`。
-- `SARIMA`：只使用训练期历史 `pm25`，默认季节周期为 24。
+- `SARIMA`：只使用训练期历史 `pm25`，使用 pmdarima.auto_arima 自动选择最优参数，默认季节周期为 24。
 
 `ARIMA`、`SARIMA` 不使用外生特征，不使用验证期或预测窗口真实值拟合。
 
@@ -82,7 +82,7 @@ python -m pm25_forecast.scripts.train_model --model lstm --input-window 720 --ou
 python -m pm25_forecast.scripts.train_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 python -m pm25_forecast.scripts.train_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 python -m pm25_forecast.scripts.train_model --model arima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
-python -m pm25_forecast.scripts.train_model --model sarima --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.train_model --model sarima --sarima-auto --seasonal-period 24 --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 ```
 
 预测：
