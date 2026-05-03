@@ -5,7 +5,7 @@ from pathlib import Path
 from pm25_forecast.utils.data_utils import parse_predict_start, safe_timestamp_label
 
 
-SUPPORTED_MODEL_NAMES = ("lstm", "xgboost", "random_forest", "arima", "sarima")
+SUPPORTED_MODEL_NAMES = ("lstm", "attention_lstm", "xgboost", "random_forest", "arima", "sarima")
 
 
 def validate_model_name(model_name: str) -> str:

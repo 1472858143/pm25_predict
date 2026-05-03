@@ -44,7 +44,7 @@ class PathUtilityTests(unittest.TestCase):
     def test_supported_model_names_are_fixed(self):
         self.assertEqual(
             SUPPORTED_MODEL_NAMES,
-            ("lstm", "xgboost", "random_forest", "arima", "sarima"),
+            ("lstm", "attention_lstm", "xgboost", "random_forest", "arima", "sarima"),
         )
 
     def test_validate_model_name_requires_exact_supported_name(self):
