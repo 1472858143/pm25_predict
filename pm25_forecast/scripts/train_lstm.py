@@ -270,6 +270,7 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
     best_val_loss = float("inf")
     best_val_state = None
     best_val_epoch = 0
+    patience_counter = 0
     lstm_dir.mkdir(parents=True, exist_ok=True)
     start_time = time.time()
     print(
@@ -349,6 +350,9 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
             best_val_loss = validation_loss
             best_val_epoch = epoch
             best_val_state = {key: value.detach().cpu() for key, value in model.state_dict().items()}
+            patience_counter = 0
+        else:
+            patience_counter += 1
 
         current_lr = optimizer.param_groups[0]["lr"]
         print(
@@ -360,6 +364,9 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
             f"best_val_epoch={best_val_epoch} "
             f"lr={current_lr:.2e}"
         )
+        if patience_counter >= int(args.early_stopping_patience):
+            print(f"Early stopping at epoch {epoch}, best validation at epoch {best_val_epoch}")
+            break
 
     model_path = lstm_dir / "model.pt"
     best_model_path = lstm_dir / "model_best_train_loss.pt"
