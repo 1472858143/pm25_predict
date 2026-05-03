@@ -8,6 +8,7 @@ from Reproduce.utils.paths import (
     data_dir,
     model_dir,
     prediction_dir,
+    validate_model_name,
     window_experiment_dir,
     window_experiment_name,
 )
@@ -38,6 +39,12 @@ class PathUtilityTests(unittest.TestCase):
             SUPPORTED_MODEL_NAMES,
             ("lstm", "xgboost", "random_forest", "arima", "sarima"),
         )
+
+    def test_validate_model_name_requires_exact_supported_name(self):
+        self.assertEqual(validate_model_name("random_forest"), "random_forest")
+        for model_name in ("LSTM", " lstm ", "unknown"):
+            with self.assertRaises(ValueError):
+                validate_model_name(model_name)
 
 
 if __name__ == "__main__":

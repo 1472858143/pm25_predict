@@ -9,11 +9,10 @@ SUPPORTED_MODEL_NAMES = ("lstm", "xgboost", "random_forest", "arima", "sarima")
 
 
 def validate_model_name(model_name: str) -> str:
-    normalized = str(model_name).strip().lower()
-    if normalized not in SUPPORTED_MODEL_NAMES:
+    if not isinstance(model_name, str) or model_name not in SUPPORTED_MODEL_NAMES:
         supported = ", ".join(SUPPORTED_MODEL_NAMES)
         raise ValueError(f"Unsupported model: {model_name}. Supported models: {supported}")
-    return normalized
+    return model_name
 
 
 def window_experiment_name(input_window: int, output_window: int) -> str:
