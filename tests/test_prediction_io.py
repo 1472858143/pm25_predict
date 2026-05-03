@@ -36,6 +36,7 @@ class PredictionIoTests(unittest.TestCase):
         self.assertEqual(frame["horizon"].tolist(), [1, 2, 3])
         self.assertEqual(frame["error"].round(6).tolist(), [1.0, -1.0, -1.0])
         self.assertEqual(frame["abs_error"].round(6).tolist(), [1.0, 1.0, 1.0])
+        self.assertEqual(frame["relative_error"].round(6).tolist(), [0.1, 0.05, 0.025])
 
     def test_write_prediction_outputs_creates_standard_files(self):
         with TemporaryDirectory() as tmp:
@@ -76,7 +77,25 @@ class PredictionIoTests(unittest.TestCase):
             self.assertTrue((output_dir / "horizon_metrics.json").exists())
             self.assertTrue((output_dir / "stage_metrics.csv").exists())
             self.assertTrue((output_dir / "stage_metrics.json").exists())
+            self.assertTrue((output_dir / "plot_status.md").exists())
             self.assertTrue((output_dir / "prediction_summary.json").exists())
+            plot_status = (output_dir / "plot_status.md").read_text(encoding="utf-8")
+            plot_files = {
+                "prediction_curve": output_dir / "plots" / "prediction_curve.png",
+                "error_curve": output_dir / "plots" / "error_curve.png",
+                "scatter": output_dir / "plots" / "scatter.png",
+            }
+            for plot_name, plot_path in plot_files.items():
+                self.assertIn(f"- {plot_name}: `", plot_status)
+                if f"- {plot_name}: `True`" in plot_status:
+                    self.assertTrue(plot_path.exists(), f"{plot_name} was reported as plotted but PNG is missing")
+            try:
+                import matplotlib  # noqa: F401
+            except ImportError:
+                pass
+            else:
+                for plot_path in plot_files.values():
+                    self.assertTrue(plot_path.exists())
             written = pd.read_csv(output_dir / "predictions.csv")
             self.assertEqual(list(written.columns), PREDICTION_COLUMNS)
             metrics = json.loads((output_dir / "metrics.json").read_text(encoding="utf-8"))
