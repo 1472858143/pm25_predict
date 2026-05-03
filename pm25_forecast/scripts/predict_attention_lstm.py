@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from pm25_forecast.models.attention_lstm import AttentionConfig, build_model
 from pm25_forecast.models.lstm_one_step import require_torch
+from pm25_forecast.scripts.train_lstm import select_device
 from pm25_forecast.utils.calibration import apply_calibration
 from pm25_forecast.utils.data_utils import (
     DEFAULT_INPUT_WINDOW,
@@ -46,16 +47,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-calibration", action="store_true", help="Disable fitted prediction calibration.")
     parser.add_argument("--prepare-data", action="store_true", help="Regenerate prepared data before predicting.")
     return parser.parse_args()
-
-
-def select_device(torch: Any, requested: str) -> Any:
-    if requested == "cuda":
-        if not torch.cuda.is_available():
-            raise RuntimeError("CUDA was requested but torch.cuda.is_available() is False.")
-        return torch.device("cuda")
-    if requested == "cpu":
-        return torch.device("cpu")
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def checkpoint_path(attn_dir: Path, requested: str | None) -> Path:
