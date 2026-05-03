@@ -203,6 +203,7 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
         f"attention_heads={int(args.attention_heads)}"
     )
 
+    epoch = 0
     for epoch in range(1, int(args.epochs) + 1):
         model.train()
         batch_losses: list[float] = []
