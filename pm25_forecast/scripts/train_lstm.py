@@ -255,6 +255,14 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
     )
     validation_loader = DataLoader(validation_dataset, batch_size=int(args.batch_size), shuffle=False, drop_last=False)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.learning_rate), weight_decay=float(args.weight_decay))
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        patience=int(args.lr_patience),
+        factor=float(args.lr_factor),
+        min_lr=1e-6,
+        verbose=True,
+    )
 
     history: list[dict[str, float | int]] = []
     best_train_loss = float("inf")
@@ -323,6 +331,8 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
         validation_rmse_scaled = float(np.sqrt(val_sse / max(val_count, 1)))
         validation_mae_scaled = float(val_abs_error / max(val_count, 1))
 
+        scheduler.step(validation_loss)
+
         history.append(
             {
                 "epoch": epoch,
@@ -340,13 +350,15 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
             best_val_epoch = epoch
             best_val_state = {key: value.detach().cpu() for key, value in model.state_dict().items()}
 
+        current_lr = optimizer.param_groups[0]["lr"]
         print(
             f"epoch={epoch}/{args.epochs} "
             f"train_loss={train_loss:.8f} "
             f"val_loss={validation_loss:.8f} "
             f"val_rmse_scaled={validation_rmse_scaled:.8f} "
             f"best_val_loss={best_val_loss:.8f} "
-            f"best_val_epoch={best_val_epoch}"
+            f"best_val_epoch={best_val_epoch} "
+            f"lr={current_lr:.2e}"
         )
 
     model_path = lstm_dir / "model.pt"
