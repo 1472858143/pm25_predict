@@ -299,6 +299,8 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
                 variance_penalty=float(args.variance_penalty),
             )
             loss.backward()
+            if float(args.max_grad_norm) > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=float(args.max_grad_norm))
             optimizer.step()
             batch_losses.append(float(loss.detach().cpu().item()))
 
