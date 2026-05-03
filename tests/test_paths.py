@@ -63,6 +63,19 @@ class PathUtilityTests(unittest.TestCase):
                 self.assertEqual(args.input_window, 720)
                 self.assertEqual(args.output_window, 72)
 
+    def test_lstm_prediction_labels_include_dynamic_horizon(self):
+        from Reproduce.scripts.predict_month import prediction_plot_title, stage_metric_ranges
+
+        self.assertEqual(
+            stage_metric_ranges(72),
+            {
+                "h01_08": (1, 8),
+                "h09_16": (9, 16),
+                "h17_72": (17, 72),
+            },
+        )
+        self.assertIn("LSTM 72h", prediction_plot_title("prediction", 72, "2026-03-01 00:00:00+08:00"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -78,6 +78,27 @@ def checkpoint_path(exp_dir: Path, requested: str | None) -> Path:
     return exp_dir / "model.pt"
 
 
+def stage_metric_ranges(output_window: int) -> dict[str, tuple[int, int]]:
+    horizon = int(output_window)
+    ranges: dict[str, tuple[int, int]] = {}
+    for start_h, end_h in ((1, min(8, horizon)), (9, min(16, horizon)), (17, horizon)):
+        if start_h <= end_h:
+            ranges[f"h{start_h:02d}_{end_h:02d}"] = (start_h, end_h)
+    return ranges
+
+
+def prediction_plot_title(plot_kind: str, output_window: int, predict_start: str) -> str:
+    suffixes = {
+        "prediction": "Prediction",
+        "error": "Prediction Error",
+        "scatter": "True vs Predicted",
+    }
+    if plot_kind not in suffixes:
+        supported = ", ".join(suffixes)
+        raise ValueError(f"Unsupported prediction plot kind: {plot_kind}. Supported kinds: {supported}")
+    return f"LSTM {int(output_window)}h PM2.5 {suffixes[plot_kind]} ({predict_start})"
+
+
 def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     torch, _ = require_torch()
     if args.prepare_data:
@@ -181,11 +202,7 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
         }
         for horizon in range(1, output_window + 1)
     ]
-    stage_ranges = {
-        "h01_08": (1, min(8, output_window)),
-        "h09_16": (9, min(16, output_window)),
-        "h17_24": (17, output_window),
-    }
+    stage_ranges = stage_metric_ranges(output_window)
     stage_metrics = {}
     for stage_name, (start_h, end_h) in stage_ranges.items():
         if start_h <= end_h:
@@ -217,17 +234,17 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     plot_status["prediction_curve"] = plot_prediction_curve(
         predictions,
         plots_dir / "prediction_curve.png",
-        f"LSTM 24h PM2.5 Prediction ({args.predict_start})",
+        prediction_plot_title("prediction", output_window, args.predict_start),
     )
     plot_status["error_curve"] = plot_error_curve(
         predictions,
         plots_dir / "error_curve.png",
-        f"LSTM 24h PM2.5 Prediction Error ({args.predict_start})",
+        prediction_plot_title("error", output_window, args.predict_start),
     )
     plot_status["scatter"] = plot_scatter(
         predictions,
         plots_dir / "scatter.png",
-        f"LSTM 24h PM2.5 True vs Predicted ({args.predict_start})",
+        prediction_plot_title("scatter", output_window, args.predict_start),
     )
     history_path = exp_dir / "training_history.csv"
     if history_path.exists():
