@@ -55,6 +55,23 @@ class TrainModelCliTests(unittest.TestCase):
         self.assertEqual(args.early_stopping_patience, 20)
         self.assertEqual(args.max_grad_norm, 2.0)
 
+    def test_parser_attention_lstm_defaults(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "attention_lstm"])
+        self.assertEqual(args.attention_heads, 4)
+        self.assertEqual(args.hidden_size, 128)
+        self.assertEqual(args.num_layers, 2)
+        self.assertEqual(args.dropout, 0.3)
+        self.assertEqual(args.lr_patience, 5)
+        self.assertEqual(args.lr_factor, 0.5)
+        self.assertEqual(args.early_stopping_patience, 15)
+        self.assertEqual(args.max_grad_norm, 1.0)
+
+    def test_parser_accepts_attention_heads(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "attention_lstm", "--attention-heads", "8"])
+        self.assertEqual(args.attention_heads, 8)
+
 
 if __name__ == "__main__":
     unittest.main()
