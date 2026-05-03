@@ -10,13 +10,24 @@
 过去 720 小时 -> 一次性预测未来 72 小时 PM2.5
 ```
 
-`LSTM`、`XGBoost`、`RandomForest` 使用 6 个特征做直接多输出预测：
+`LSTM`、`AttentionLSTM`、`XGBoost`、`RandomForest` 使用 6 个特征做直接多输出预测：
 
 ```text
 temperature, humidity, wind_speed, precipitation, pressure, pm25
 ```
 
 `ARIMA`、`SARIMA` 只使用训练期历史 `pm25`，不使用外生特征，不使用验证期或预测窗口真实值拟合。
+
+## 模型概览
+
+| 模型 | 架构 | 核心特性 |
+|------|------|--------|
+| LSTM | LSTM(128, 2层) → Linear | 基准模型，RNN序列学习 |
+| AttentionLSTM | LSTM(128, 2层) → Multi-Head Self-Attention(4头) → Linear | **核心模型**，注意力机制加权聚合，性能优化 |
+| XGBoost | 梯度提升树 | 非线性特征交互，快速训练 |
+| RandomForest | 随机森林 | 特征重要性解释，鲁棒性强 |
+| ARIMA | 自回归积分滑动平均 | 单变量统计，简洁可解释 |
+| SARIMA | 季节性ARIMA | 季节模式建模（周期=24h） |
 
 ## 2. 数据与时间切分
 
@@ -49,6 +60,7 @@ pm25_forecast/outputs/window_720h_to_72h/
 ├── data/
 ├── models/
 │   ├── lstm/
+│   ├── attention_lstm/
 │   ├── xgboost/
 │   ├── random_forest/
 │   ├── arima/
