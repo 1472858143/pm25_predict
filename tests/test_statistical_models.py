@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from pm25_forecast.models.statistical_models import forecast_statistical_model, load_train_pm25_series
+from pm25_forecast.models.statistical_models import forecast_statistical_model, load_train_pm25_series, train_sarima_auto
 
 
 class _FakeForecastModel:
@@ -42,6 +42,19 @@ class StatisticalModelTests(unittest.TestCase):
         forecast = forecast_statistical_model(_FakeForecastModel(), output_window=4)
         self.assertEqual(forecast.shape, (1, 4))
         self.assertEqual(forecast.tolist(), [[0.0, 0.0, 1.0, 2.0]])
+
+
+class SarimaAutoTests(unittest.TestCase):
+    def test_train_sarima_auto_returns_model_and_info(self):
+        np.random.seed(42)
+        series = np.random.randn(200).cumsum() + 50
+        model, info = train_sarima_auto(series, seasonal_period=12, max_p=2, max_q=2, max_P=1, max_Q=1)
+        self.assertTrue(hasattr(model, "predict"))
+        self.assertIn("order", info)
+        self.assertIn("seasonal_order", info)
+        self.assertIn("aic", info)
+        self.assertEqual(len(info["order"]), 3)
+        self.assertEqual(len(info["seasonal_order"]), 4)
 
 
 if __name__ == "__main__":

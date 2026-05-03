@@ -17,6 +17,7 @@ from pm25_forecast.models.statistical_models import (
     load_train_pm25_series,
     save_statistical_model,
     train_arima_model,
+    train_sarima_auto,
     train_sarima_model,
 )
 from pm25_forecast.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
@@ -71,6 +72,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--arima-order", nargs=3, type=int, default=[2, 1, 2])
     parser.add_argument("--sarima-order", nargs=3, type=int, default=[1, 1, 1])
     parser.add_argument("--sarima-seasonal-order", nargs=4, type=int, default=[1, 0, 1, 24])
+    parser.add_argument("--sarima-auto", action="store_true", help="Use auto_arima to select optimal SARIMA parameters.")
+    parser.add_argument("--seasonal-period", type=int, default=24, help="Seasonal period for auto SARIMA (default: 24).")
     return parser
 
 
@@ -93,6 +96,7 @@ def train_non_lstm(args: argparse.Namespace) -> dict[str, Any]:
     out_dir = model_dir(window_dir, model_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / "model.pkl"
+    auto_info = None
 
     if model_name == "random_forest":
         model = train_random_forest_model(
@@ -121,12 +125,21 @@ def train_non_lstm(args: argparse.Namespace) -> dict[str, Any]:
         model = train_arima_model(load_train_pm25_series(data_config), tuple(args.arima_order))
         save_statistical_model(model, model_path)
     elif model_name == "sarima":
-        model = train_sarima_model(
-            load_train_pm25_series(data_config),
-            tuple(args.sarima_order),
-            tuple(args.sarima_seasonal_order),
-        )
-        save_statistical_model(model, model_path)
+        series = load_train_pm25_series(data_config)
+        if args.sarima_auto:
+            model, auto_info = train_sarima_auto(
+                series,
+                seasonal_period=args.seasonal_period,
+            )
+            save_statistical_model(model, model_path)
+        else:
+            model = train_sarima_model(
+                series,
+                tuple(args.sarima_order),
+                tuple(args.sarima_seasonal_order),
+            )
+            save_statistical_model(model, model_path)
+            auto_info = None
     else:
         raise ValueError(f"Unsupported non-LSTM model: {model_name}")
 
@@ -139,6 +152,8 @@ def train_non_lstm(args: argparse.Namespace) -> dict[str, Any]:
             "elapsed_seconds": float(time.time() - start),
         },
     }
+    if model_name == "sarima" and args.sarima_auto and auto_info is not None:
+        config["training"]["auto_arima"] = auto_info
     write_json(out_dir / "training_config.json", config)
     return config
 

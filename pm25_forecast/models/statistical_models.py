@@ -50,8 +50,54 @@ def train_sarima_model(
     return model.fit(disp=False)
 
 
+def train_sarima_auto(
+    series: Any,
+    seasonal_period: int = 24,
+    max_p: int = 3,
+    max_d: int = 2,
+    max_q: int = 3,
+    max_P: int = 2,
+    max_D: int = 1,
+    max_Q: int = 2,
+) -> tuple[Any, dict[str, Any]]:
+    try:
+        from pmdarima import auto_arima
+    except ImportError as exc:
+        raise RuntimeError("pmdarima is required for auto SARIMA. Run: pip install pmdarima") from exc
+    values = np.asarray(series, dtype=float)
+    model = auto_arima(
+        values,
+        start_p=1, max_p=int(max_p),
+        d=None, max_d=int(max_d),
+        start_q=1, max_q=int(max_q),
+        start_P=1, max_P=int(max_P),
+        D=None, max_D=int(max_D),
+        start_Q=1, max_Q=int(max_Q),
+        m=int(seasonal_period),
+        seasonal=True,
+        stepwise=True,
+        suppress_warnings=True,
+        error_action="ignore",
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+        information_criterion="aic",
+    )
+    order = model.order
+    seasonal_order = model.seasonal_order
+    info: dict[str, Any] = {
+        "order": list(order),
+        "seasonal_order": list(seasonal_order),
+        "aic": float(model.aic()),
+        "seasonal_period": int(seasonal_period),
+    }
+    return model, info
+
+
 def forecast_statistical_model(model: Any, output_window: int) -> np.ndarray:
-    forecast = model.forecast(steps=int(output_window))
+    if hasattr(model, "forecast"):
+        forecast = model.forecast(steps=int(output_window))
+    else:
+        forecast = model.predict(n_periods=int(output_window))
     values = np.asarray(forecast, dtype=np.float32).reshape(1, int(output_window))
     return np.maximum(values, 0.0)
 

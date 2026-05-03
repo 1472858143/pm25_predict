@@ -18,6 +18,18 @@ class TrainModelCliTests(unittest.TestCase):
         self.assertEqual(args.device, "cpu")
         self.assertEqual(args.epochs, 1)
 
+    def test_parser_accepts_sarima_auto_flag(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "sarima", "--sarima-auto", "--seasonal-period", "12"])
+        self.assertTrue(args.sarima_auto)
+        self.assertEqual(args.seasonal_period, 12)
+
+    def test_parser_defaults_sarima_auto_off(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "sarima"])
+        self.assertFalse(args.sarima_auto)
+        self.assertEqual(args.seasonal_period, 24)
+
 
 if __name__ == "__main__":
     unittest.main()
