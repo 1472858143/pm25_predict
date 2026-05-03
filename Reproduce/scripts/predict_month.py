@@ -16,7 +16,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from Reproduce.models.lstm_one_step import LSTMConfig, build_model, require_torch
 from Reproduce.utils.calibration import apply_calibration
 from Reproduce.utils.data_utils import (
+    DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
+    DEFAULT_OUTPUT_WINDOW,
     DEFAULT_PREDICT_START,
     TARGET_COLUMN,
     experiment_name,
@@ -40,8 +42,8 @@ from Reproduce.utils.plotting import (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Predict one direct multi-output window with a trained LSTM.")
     parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Reproduction outputs root.")
-    parser.add_argument("--input-window", type=int, default=720)
-    parser.add_argument("--output-window", type=int, default=24)
+    parser.add_argument("--input-window", type=int, default=DEFAULT_INPUT_WINDOW)
+    parser.add_argument("--output-window", type=int, default=DEFAULT_OUTPUT_WINDOW)
     parser.add_argument("--predict-start", default=DEFAULT_PREDICT_START, help="Prediction start timestamp.")
     parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--num-layers", type=int, default=1)

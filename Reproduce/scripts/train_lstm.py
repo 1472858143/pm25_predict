@@ -18,7 +18,9 @@ from Reproduce.models.lstm_one_step import LSTMConfig, build_model, require_torc
 from Reproduce.utils.calibration import apply_calibration, fit_horizon_linear_calibration
 from Reproduce.utils.data_utils import (
     DEFAULT_DATA_PATH,
+    DEFAULT_INPUT_WINDOW,
     DEFAULT_OUTPUT_ROOT,
+    DEFAULT_OUTPUT_WINDOW,
     DEFAULT_PREDICT_START,
     TARGET_COLUMN,
     experiment_name,
@@ -34,8 +36,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train direct multi-output LSTM for PM2.5 reproduction.")
     parser.add_argument("--data-path", default=str(DEFAULT_DATA_PATH), help="Input CSV path.")
     parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT), help="Reproduction outputs root.")
-    parser.add_argument("--input-window", type=int, default=720, help="Historical input window in hours.")
-    parser.add_argument("--output-window", type=int, default=24, help="Direct forecast horizon in hours.")
+    parser.add_argument("--input-window", type=int, default=DEFAULT_INPUT_WINDOW, help="Historical input window in hours.")
+    parser.add_argument("--output-window", type=int, default=DEFAULT_OUTPUT_WINDOW, help="Direct forecast horizon in hours.")
     parser.add_argument("--predict-start", default=DEFAULT_PREDICT_START, help="Prediction start timestamp.")
     parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--num-layers", type=int, default=1)

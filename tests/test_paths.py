@@ -1,5 +1,7 @@
 from pathlib import Path
+import sys
 import unittest
+from unittest.mock import patch
 
 from Reproduce.utils.data_utils import experiment_name
 from Reproduce.utils.paths import (
@@ -45,6 +47,21 @@ class PathUtilityTests(unittest.TestCase):
         for model_name in ("LSTM", " lstm ", "unknown"):
             with self.assertRaises(ValueError):
                 validate_model_name(model_name)
+
+    def test_cli_parse_args_default_to_window_constants(self):
+        from Reproduce.scripts import predict_month, prepare_data, train_lstm
+
+        parsers = (
+            ("prepare_data", prepare_data.parse_args),
+            ("train_lstm", train_lstm.parse_args),
+            ("predict_month", predict_month.parse_args),
+        )
+        for script_name, parse_args in parsers:
+            with self.subTest(script=script_name):
+                with patch.object(sys, "argv", [script_name]):
+                    args = parse_args()
+                self.assertEqual(args.input_window, 720)
+                self.assertEqual(args.output_window, 72)
 
 
 if __name__ == "__main__":
