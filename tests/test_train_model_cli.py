@@ -30,6 +30,31 @@ class TrainModelCliTests(unittest.TestCase):
         self.assertFalse(args.sarima_auto)
         self.assertEqual(args.seasonal_period, 24)
 
+    def test_parser_lstm_defaults_updated(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "lstm"])
+        self.assertEqual(args.hidden_size, 128)
+        self.assertEqual(args.num_layers, 2)
+        self.assertEqual(args.dropout, 0.3)
+        self.assertEqual(args.lr_patience, 5)
+        self.assertEqual(args.lr_factor, 0.5)
+        self.assertEqual(args.early_stopping_patience, 15)
+        self.assertEqual(args.max_grad_norm, 1.0)
+
+    def test_parser_accepts_lr_scheduler_and_early_stopping(self):
+        parser = build_arg_parser()
+        args = parser.parse_args([
+            "--model", "lstm",
+            "--lr-patience", "10",
+            "--lr-factor", "0.3",
+            "--early-stopping-patience", "20",
+            "--max-grad-norm", "2.0",
+        ])
+        self.assertEqual(args.lr_patience, 10)
+        self.assertEqual(args.lr_factor, 0.3)
+        self.assertEqual(args.early_stopping_patience, 20)
+        self.assertEqual(args.max_grad_norm, 2.0)
+
 
 if __name__ == "__main__":
     unittest.main()
