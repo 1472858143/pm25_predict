@@ -1,0 +1,44 @@
+from pathlib import Path
+import unittest
+
+from Reproduce.utils.data_utils import experiment_name
+from Reproduce.utils.paths import (
+    SUPPORTED_MODEL_NAMES,
+    comparison_dir,
+    data_dir,
+    model_dir,
+    prediction_dir,
+    window_experiment_dir,
+    window_experiment_name,
+)
+
+
+class PathUtilityTests(unittest.TestCase):
+    def test_window_experiment_name_replaces_lstm_name(self):
+        self.assertEqual(window_experiment_name(720, 72), "window_720h_to_72h")
+        self.assertEqual(experiment_name(720, 72), "window_720h_to_72h")
+
+    def test_model_prediction_and_comparison_dirs_are_nested_under_window(self):
+        root = Path("E:/tmp/pm25_outputs")
+        base = window_experiment_dir(root, 720, 72)
+        self.assertEqual(base, root / "window_720h_to_72h")
+        self.assertEqual(data_dir(base), base / "data")
+        self.assertEqual(model_dir(base, "lstm"), base / "models" / "lstm")
+        self.assertEqual(
+            prediction_dir(base, "2026-03-01 00:00:00+08:00", "random_forest"),
+            base / "predictions" / "start_2026_03_01_0000" / "random_forest",
+        )
+        self.assertEqual(
+            comparison_dir(base, "2026-03-01 00:00:00+08:00"),
+            base / "comparisons" / "start_2026_03_01_0000",
+        )
+
+    def test_supported_model_names_are_fixed(self):
+        self.assertEqual(
+            SUPPORTED_MODEL_NAMES,
+            ("lstm", "xgboost", "random_forest", "arima", "sarima"),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

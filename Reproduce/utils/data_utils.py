@@ -14,6 +14,8 @@ REPRODUCE_ROOT = PROJECT_ROOT / "Reproduce"
 DEFAULT_DATA_PATH = PROJECT_ROOT / "data" / "processed_beijing.csv"
 DEFAULT_OUTPUT_ROOT = REPRODUCE_ROOT / "outputs"
 DEFAULT_PREDICT_START = "2026-03-01 00:00:00+08:00"
+DEFAULT_INPUT_WINDOW = 720
+DEFAULT_OUTPUT_WINDOW = 72
 
 RAW_COLUMN_MAP = {
     "timestamp": "timestamp",
@@ -90,8 +92,8 @@ def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def experiment_name(input_window: int, output_window: int = 1) -> str:
-    return f"lstm_{int(input_window)}h_to_{int(output_window)}h"
+def experiment_name(input_window: int, output_window: int = DEFAULT_OUTPUT_WINDOW) -> str:
+    return f"window_{int(input_window)}h_to_{int(output_window)}h"
 
 
 def parse_predict_start(value: str) -> pd.Timestamp:
@@ -235,8 +237,8 @@ def build_windows(
 def prepare_data_bundle(
     data_path: str | Path = DEFAULT_DATA_PATH,
     output_root: str | Path = DEFAULT_OUTPUT_ROOT,
-    input_window: int = 720,
-    output_window: int = 24,
+    input_window: int = DEFAULT_INPUT_WINDOW,
+    output_window: int = DEFAULT_OUTPUT_WINDOW,
     predict_start: str = DEFAULT_PREDICT_START,
 ) -> dict[str, Any]:
     output_root_path = Path(output_root)
