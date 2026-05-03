@@ -7,9 +7,9 @@ from dataclasses import dataclass
 class LSTMConfig:
     input_size: int = 6
     output_size: int = 1
-    hidden_size: int = 64
-    num_layers: int = 1
-    dropout: float = 0.2
+    hidden_size: int = 128
+    num_layers: int = 2
+    dropout: float = 0.3
 
 
 def require_torch():
