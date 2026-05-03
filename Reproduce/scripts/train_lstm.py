@@ -163,8 +163,7 @@ def collect_model_predictions(torch: Any, model: Any, loader: Any, device: Any) 
     return np.concatenate(predictions, axis=0)
 
 
-def main() -> None:
-    args = parse_args()
+def run_training(args: argparse.Namespace) -> dict[str, Any]:
     torch, _ = require_torch()
     from torch.utils.data import DataLoader, TensorDataset
 
@@ -452,6 +451,16 @@ def main() -> None:
     print(f"Saved best-train-loss model: {best_model_path}")
     print(f"Saved best-validation-loss model: {best_val_model_path}")
     print(f"Saved calibration: {calibration_path}")
+    return {
+        "model_name": "lstm",
+        "model_dir": str(lstm_dir),
+        "model_path": str(model_path),
+        "training_config_path": str(lstm_dir / "training_config.json"),
+    }
+
+
+def main() -> None:
+    run_training(parse_args())
 
 
 if __name__ == "__main__":
