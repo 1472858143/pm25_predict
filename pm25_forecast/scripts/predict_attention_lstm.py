@@ -113,7 +113,7 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     ckpt = checkpoint_path(attn_dir, args.model_path)
     if not ckpt.exists():
         raise FileNotFoundError(f"Model checkpoint not found: {ckpt}")
-    state = torch.load(ckpt, map_location=device)
+    state = torch.load(ckpt, map_location=device, weights_only=True)
     model.load_state_dict(state)
     model.eval()
 
