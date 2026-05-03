@@ -6,7 +6,6 @@ import sys
 from typing import Any
 
 import numpy as np
-import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -21,22 +20,13 @@ from Reproduce.utils.data_utils import (
     DEFAULT_OUTPUT_WINDOW,
     DEFAULT_PREDICT_START,
     TARGET_COLUMN,
-    experiment_name,
     load_scaler,
     prepare_data_bundle,
     parse_predict_start,
     read_json,
-    safe_timestamp_label,
-    write_json,
 )
-from Reproduce.utils.metrics import regression_metrics
-from Reproduce.utils.plotting import (
-    plot_error_curve,
-    plot_loss_curve,
-    plot_prediction_curve,
-    plot_scatter,
-    write_plot_status,
-)
+from Reproduce.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from Reproduce.utils.prediction_io import build_predictions_frame, write_prediction_outputs
 
 
 def parse_args() -> argparse.Namespace:
@@ -66,16 +56,16 @@ def select_device(torch: Any, requested: str) -> Any:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def checkpoint_path(exp_dir: Path, requested: str | None) -> Path:
+def checkpoint_path(lstm_dir: Path, requested: str | None) -> Path:
     if requested:
         return Path(requested)
-    best_val = exp_dir / "model_best_val_loss.pt"
+    best_val = lstm_dir / "model_best_val_loss.pt"
     if best_val.exists():
         return best_val
-    best = exp_dir / "model_best_train_loss.pt"
+    best = lstm_dir / "model_best_train_loss.pt"
     if best.exists():
         return best
-    return exp_dir / "model.pt"
+    return lstm_dir / "model.pt"
 
 
 def stage_metric_ranges(output_window: int) -> dict[str, tuple[int, int]]:
@@ -109,8 +99,9 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
             predict_start=args.predict_start,
         )
 
-    exp_dir = Path(args.output_root) / experiment_name(args.input_window, args.output_window)
-    bundle_path = exp_dir / "data" / "windows.npz"
+    window_dir = window_experiment_dir(args.output_root, args.input_window, args.output_window)
+    lstm_dir = model_dir(window_dir, "lstm")
+    bundle_path = window_dir / "data" / "windows.npz"
     if not bundle_path.exists():
         prepare_data_bundle(
             output_root=args.output_root,
@@ -137,7 +128,7 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
             dropout=float(args.dropout),
         )
     ).to(device)
-    ckpt = checkpoint_path(exp_dir, args.model_path)
+    ckpt = checkpoint_path(lstm_dir, args.model_path)
     if not ckpt.exists():
         raise FileNotFoundError(f"Model checkpoint not found: {ckpt}")
     state = torch.load(ckpt, map_location=device)
@@ -153,10 +144,10 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
             predictions_scaled.append(pred)
     y_pred_scaled = np.concatenate(predictions_scaled)
 
-    scaler = load_scaler(exp_dir)
+    scaler = load_scaler(window_dir)
     y_pred_model = scaler.inverse_column(y_pred_scaled, TARGET_COLUMN)
     calibration_applied = False
-    calibration_path = Path(args.calibration_path) if args.calibration_path else exp_dir / "calibration.json"
+    calibration_path = Path(args.calibration_path) if args.calibration_path else lstm_dir / "calibration.json"
     calibration: dict[str, Any] | None = None
     if not bool(args.no_calibration) and calibration_path.exists():
         calibration = read_json(calibration_path)
@@ -172,102 +163,31 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     if y_true.ndim == 1:
         y_true = y_true.reshape(-1, 1)
     output_window = int(y_true.shape[1])
-    sample_ids = np.repeat(np.arange(len(y_true)), output_window)
-    horizons = np.tile(np.arange(1, output_window + 1), len(y_true))
-    predictions = pd.DataFrame(
-        {
-            "sample_id": sample_ids,
-            "origin_timestamp": np.repeat(timestamps_start, output_window),
-            "target_end_timestamp": np.repeat(timestamps_end, output_window),
-            "timestamp": timestamps_target.reshape(-1),
-            "horizon": horizons,
-            "y_true": y_true.reshape(-1),
-            "y_pred_model": y_pred_model.reshape(-1),
-            "y_pred": y_pred.reshape(-1),
-        }
+    predictions = build_predictions_frame(
+        model_name="lstm",
+        y_true=y_true,
+        y_pred_model=y_pred_model,
+        y_pred=y_pred,
+        timestamps_start=timestamps_start,
+        timestamps_end=timestamps_end,
+        timestamps_target=timestamps_target,
     )
-    predictions["error"] = predictions["y_pred"] - predictions["y_true"]
-    predictions["abs_error"] = predictions["error"].abs()
-    predictions["relative_error"] = predictions["abs_error"] / np.maximum(predictions["y_true"].abs(), 1.0)
-
-    metrics = regression_metrics(predictions["y_true"], predictions["y_pred"])
-    model_metrics = regression_metrics(predictions["y_true"], predictions["y_pred_model"])
-    horizon_metrics = [
-        {
-            "horizon": horizon,
-            **regression_metrics(
-                predictions.loc[predictions["horizon"] == horizon, "y_true"],
-                predictions.loc[predictions["horizon"] == horizon, "y_pred"],
-            ),
-        }
-        for horizon in range(1, output_window + 1)
-    ]
-    stage_ranges = stage_metric_ranges(output_window)
-    stage_metrics = {}
-    for stage_name, (start_h, end_h) in stage_ranges.items():
-        if start_h <= end_h:
-            mask = (predictions["horizon"] >= start_h) & (predictions["horizon"] <= end_h)
-            stage_metrics[stage_name] = regression_metrics(
-                predictions.loc[mask, "y_true"],
-                predictions.loc[mask, "y_pred"],
-            )
 
     prediction_start = parse_predict_start(args.predict_start)
-    window_dir = exp_dir / f"start_{safe_timestamp_label(prediction_start)}"
-    plots_dir = window_dir / "plots"
-    window_dir.mkdir(parents=True, exist_ok=True)
-    plots_dir.mkdir(parents=True, exist_ok=True)
-
-    predictions.to_csv(window_dir / "predictions.csv", index=False, encoding="utf-8")
-    predictions.to_csv(exp_dir / "predictions.csv", index=False, encoding="utf-8")
-    write_json(window_dir / "metrics.json", metrics)
-    write_json(exp_dir / "metrics.json", metrics)
-    write_json(window_dir / "metrics_model_raw.json", model_metrics)
-    write_json(window_dir / "horizon_metrics.json", horizon_metrics)
-    pd.DataFrame(horizon_metrics).to_csv(window_dir / "horizon_metrics.csv", index=False, encoding="utf-8")
-    write_json(window_dir / "stage_metrics.json", stage_metrics)
-    pd.DataFrame([{"stage": name, **values} for name, values in stage_metrics.items()]).to_csv(
-        window_dir / "stage_metrics.csv", index=False, encoding="utf-8"
+    prediction_output_dir = prediction_dir(window_dir, args.predict_start, "lstm")
+    summary = write_prediction_outputs(
+        predictions=predictions,
+        output_dir=prediction_output_dir,
+        model_name="lstm",
+        model_path=ckpt,
+        calibration_path=calibration_path if calibration_path.exists() else None,
+        calibration_applied=calibration_applied,
+        calibration_method=None if calibration is None else calibration.get("method"),
+        device=str(device),
+        predict_start=args.predict_start,
     )
-
-    plot_status: dict[str, bool] = {}
-    plot_status["prediction_curve"] = plot_prediction_curve(
-        predictions,
-        plots_dir / "prediction_curve.png",
-        prediction_plot_title("prediction", output_window, args.predict_start),
-    )
-    plot_status["error_curve"] = plot_error_curve(
-        predictions,
-        plots_dir / "error_curve.png",
-        prediction_plot_title("error", output_window, args.predict_start),
-    )
-    plot_status["scatter"] = plot_scatter(
-        predictions,
-        plots_dir / "scatter.png",
-        prediction_plot_title("scatter", output_window, args.predict_start),
-    )
-    history_path = exp_dir / "training_history.csv"
-    if history_path.exists():
-        history = pd.read_csv(history_path)
-        plot_status["loss_curve"] = plot_loss_curve(history, exp_dir / "plots" / "loss_curve.png")
-    write_plot_status(window_dir / "plot_status.md", plot_status)
-
-    summary = {
-        "experiment_dir": str(exp_dir),
-        "prediction_dir": str(window_dir),
-        "model_path": str(ckpt),
-        "calibration_path": str(calibration_path) if calibration_path.exists() else None,
-        "calibration_applied": bool(calibration_applied),
-        "calibration_method": None if calibration is None else calibration.get("method"),
-        "device": str(device),
-        "sample_count": int(len(predictions)),
-        "forecast_sample_count": int(len(y_true)),
-        "output_window": int(output_window),
-        "predict_start": str(prediction_start),
-        "metrics": metrics,
-        "model_raw_metrics": model_metrics,
-    }
-    write_json(window_dir / "prediction_summary.json", summary)
+    summary["experiment_dir"] = str(window_dir)
+    summary["predict_start"] = str(prediction_start)
     return summary
 
 

@@ -23,13 +23,13 @@ from Reproduce.utils.data_utils import (
     DEFAULT_OUTPUT_WINDOW,
     DEFAULT_PREDICT_START,
     TARGET_COLUMN,
-    experiment_name,
     load_scaler,
     prepare_data_bundle,
     read_json,
     write_json,
 )
 from Reproduce.utils.metrics import regression_metrics
+from Reproduce.utils.paths import model_dir, window_experiment_dir
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,6 +63,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--prepare-data", action="store_true", help="Regenerate prepared window data before training.")
     return parser.parse_args()
+
+
+def resolve_lstm_training_paths(output_root: str | Path, input_window: int, output_window: int) -> dict[str, Path]:
+    window_dir = window_experiment_dir(output_root, input_window, output_window)
+    lstm_dir = model_dir(window_dir, "lstm")
+    return {
+        "window_dir": window_dir,
+        "lstm_dir": lstm_dir,
+        "data_config_path": window_dir / "data" / "data_config.json",
+        "bundle_path": window_dir / "data" / "windows.npz",
+    }
 
 
 def select_device(torch: Any, requested: str) -> Any:
@@ -171,9 +182,11 @@ def main() -> None:
             predict_start=args.predict_start,
         )
 
-    exp_dir = Path(args.output_root) / experiment_name(args.input_window, args.output_window)
-    data_config_path = exp_dir / "data" / "data_config.json"
-    bundle_path = exp_dir / "data" / "windows.npz"
+    paths = resolve_lstm_training_paths(args.output_root, args.input_window, args.output_window)
+    window_dir = paths["window_dir"]
+    lstm_dir = paths["lstm_dir"]
+    data_config_path = paths["data_config_path"]
+    bundle_path = paths["bundle_path"]
     if not data_config_path.exists() or not bundle_path.exists():
         prepare_data_bundle(
             data_path=args.data_path,
@@ -246,7 +259,7 @@ def main() -> None:
     best_val_loss = float("inf")
     best_val_state = None
     best_val_epoch = 0
-    exp_dir.mkdir(parents=True, exist_ok=True)
+    lstm_dir.mkdir(parents=True, exist_ok=True)
     start_time = time.time()
     print(
         f"loss={args.loss} "
@@ -333,20 +346,20 @@ def main() -> None:
             f"best_val_epoch={best_val_epoch}"
         )
 
-    model_path = exp_dir / "model.pt"
-    best_model_path = exp_dir / "model_best_train_loss.pt"
-    best_val_model_path = exp_dir / "model_best_val_loss.pt"
+    model_path = lstm_dir / "model.pt"
+    best_model_path = lstm_dir / "model_best_train_loss.pt"
+    best_val_model_path = lstm_dir / "model_best_val_loss.pt"
     torch.save(model.state_dict(), model_path)
     if best_train_state is not None:
         torch.save(best_train_state, best_model_path)
     if best_val_state is not None:
         torch.save(best_val_state, best_val_model_path)
 
-    calibration_path = exp_dir / "calibration.json"
+    calibration_path = lstm_dir / "calibration.json"
     calibration_metrics_before = None
     calibration_metrics_after = None
     if str(args.calibration) == "horizon_linear":
-        scaler = load_scaler(exp_dir)
+        scaler = load_scaler(window_dir)
         if best_val_state is not None:
             model.load_state_dict(best_val_state)
         calibration_loader = train_eval_loader if str(args.calibration_fit) == "train" else validation_loader
@@ -369,7 +382,7 @@ def main() -> None:
         calibration["metrics_after"] = calibration_metrics_after
         write_json(calibration_path, calibration)
         pd.DataFrame(calibration["horizon_stats"]).to_csv(
-            exp_dir / "calibration_horizon_stats.csv",
+            lstm_dir / "calibration_horizon_stats.csv",
             index=False,
             encoding="utf-8",
         )
@@ -388,7 +401,7 @@ def main() -> None:
             },
         )
 
-    pd.DataFrame(history).to_csv(exp_dir / "training_history.csv", index=False, encoding="utf-8")
+    pd.DataFrame(history).to_csv(lstm_dir / "training_history.csv", index=False, encoding="utf-8")
     training_config = {
         "data_config": data_config,
         "model": {
@@ -434,7 +447,7 @@ def main() -> None:
             "best_validation_loss_model_path": str(best_val_model_path),
         },
     }
-    write_json(exp_dir / "training_config.json", training_config)
+    write_json(lstm_dir / "training_config.json", training_config)
     print(f"Saved model: {model_path}")
     print(f"Saved best-train-loss model: {best_model_path}")
     print(f"Saved best-validation-loss model: {best_val_model_path}")
