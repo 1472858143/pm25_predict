@@ -41,6 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--num-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--attention-heads", type=int, default=4)
     parser.add_argument("--calibration-path", default=None)
     parser.add_argument("--no-calibration", action="store_true")
     return parser
@@ -104,8 +105,12 @@ def _predict_non_lstm(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
-    if validate_model_name(args.model) == "lstm":
+    model_name = validate_model_name(args.model)
+    if model_name == "lstm":
         return predict_month.run_prediction(args)
+    if model_name == "attention_lstm":
+        from pm25_forecast.scripts import predict_attention_lstm
+        return predict_attention_lstm.run_prediction(args)
     return _predict_non_lstm(args)
 
 
