@@ -72,6 +72,15 @@ class TrainModelCliTests(unittest.TestCase):
         args = parser.parse_args(["--model", "attention_lstm", "--attention-heads", "8"])
         self.assertEqual(args.attention_heads, 8)
 
+    def test_parser_attention_lstm_seq2seq_defaults(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--model", "attention_lstm_seq2seq"])
+        self.assertEqual(args.encoder_num_layers, 2)
+        self.assertEqual(args.decoder_num_layers, 1)
+        self.assertEqual(args.num_heads, 4)
+        self.assertEqual(args.scheduled_sampling_decay_end, 20)
+        self.assertEqual(args.scheduled_sampling_min_prob, 0.5)
+
 
 if __name__ == "__main__":
     unittest.main()

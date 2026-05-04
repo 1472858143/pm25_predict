@@ -21,7 +21,7 @@ from pm25_forecast.models.statistical_models import (
     train_sarima_model,
 )
 from pm25_forecast.models.tree_models import save_tree_model, train_random_forest_model, train_xgboost_model
-from pm25_forecast.scripts import train_attention_lstm, train_lstm
+from pm25_forecast.scripts import train_attention_lstm, train_attention_lstm_seq2seq, train_lstm
 from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
@@ -63,11 +63,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--huber-delta", type=float, default=0.05)
     parser.add_argument("--variance-penalty", type=float, default=0.05)
     parser.add_argument("--attention-heads", type=int, default=4)
+    parser.add_argument("--encoder-num-layers", type=int, default=2)
+    parser.add_argument("--decoder-num-layers", type=int, default=1)
+    parser.add_argument("--num-heads", type=int, default=4)
+    parser.add_argument("--scheduled-sampling-decay-end", type=int, default=20)
+    parser.add_argument("--scheduled-sampling-min-prob", type=float, default=0.5)
     parser.add_argument("--lr-patience", type=int, default=5)
     parser.add_argument("--lr-factor", type=float, default=0.5)
     parser.add_argument("--early-stopping-patience", type=int, default=15)
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
-    parser.add_argument("--calibration", default="horizon_linear", choices=["none", "horizon_linear"])
+    parser.add_argument("--calibration", default="horizon_linear", choices=["none", "horizon_linear", "horizon_isotonic"])
     parser.add_argument("--calibration-fit", default="train", choices=["train", "validation"])
     parser.add_argument("--calibration-slope-min", type=float, default=0.5)
     parser.add_argument("--calibration-slope-max", type=float, default=3.0)
@@ -169,6 +174,8 @@ def run_training(args: argparse.Namespace) -> dict[str, Any]:
         return train_lstm.run_training(args)
     if model_name == "attention_lstm":
         return train_attention_lstm.run_training(args)
+    if model_name == "attention_lstm_seq2seq":
+        return train_attention_lstm_seq2seq.run_training(args)
     return train_non_lstm(args)
 
 

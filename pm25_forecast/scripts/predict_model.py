@@ -14,7 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from pm25_forecast.models.statistical_models import forecast_statistical_model, load_statistical_model
 from pm25_forecast.models.tree_models import load_tree_model, predict_tree_model
-from pm25_forecast.scripts import predict_month
+from pm25_forecast.scripts import predict_attention_lstm_seq2seq, predict_month
 from pm25_forecast.utils.data_utils import (
     DEFAULT_DATA_PATH,
     DEFAULT_INPUT_WINDOW,
@@ -42,6 +42,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--attention-heads", type=int, default=4)
+    parser.add_argument("--encoder-num-layers", type=int, default=2)
+    parser.add_argument("--decoder-num-layers", type=int, default=1)
+    parser.add_argument("--num-heads", type=int, default=4)
     parser.add_argument("--calibration-path", default=None)
     parser.add_argument("--no-calibration", action="store_true")
     return parser
@@ -111,6 +114,8 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     if model_name == "attention_lstm":
         from pm25_forecast.scripts import predict_attention_lstm
         return predict_attention_lstm.run_prediction(args)
+    if model_name == "attention_lstm_seq2seq":
+        return predict_attention_lstm_seq2seq.run_prediction(args)
     return _predict_non_lstm(args)
 
 
