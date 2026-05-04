@@ -44,8 +44,12 @@ class PathUtilityTests(unittest.TestCase):
     def test_supported_model_names_are_fixed(self):
         self.assertEqual(
             SUPPORTED_MODEL_NAMES,
-            ("lstm", "attention_lstm", "xgboost", "random_forest", "arima", "sarima"),
+            ("lstm", "attention_lstm", "attention_lstm_seq2seq", "xgboost", "random_forest", "arima", "sarima"),
         )
+
+    def test_attention_lstm_seq2seq_supported(self):
+        self.assertIn("attention_lstm_seq2seq", SUPPORTED_MODEL_NAMES)
+        self.assertEqual(validate_model_name("attention_lstm_seq2seq"), "attention_lstm_seq2seq")
 
     def test_validate_model_name_requires_exact_supported_name(self):
         self.assertEqual(validate_model_name("random_forest"), "random_forest")
