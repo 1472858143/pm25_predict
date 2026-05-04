@@ -3,7 +3,8 @@ import { Alert, Empty, Layout, Spin } from "antd";
 import { Header } from "./components/Header";
 import { MetricsTable } from "./components/MetricsTable";
 import { PredictionCurveChart } from "./components/PredictionCurveChart";
-import { fetchWindows } from "./api/client";
+import { ErrorAnalysis } from "./components/ErrorAnalysis";
+import { fetchMetrics, fetchWindows } from "./api/client";
 import type { WindowInfo } from "./types/api";
 import { buildSearchString, readSelectionFromUrl } from "./utils/url";
 
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedWindow, setSelectedWindow] = useState<string | null>(null);
   const [selectedStart, setSelectedStart] = useState<string | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   useEffect(() => {
     fetchWindows()
@@ -41,6 +43,16 @@ const App: React.FC = () => {
     const search = buildSearchString({ window: selectedWindow, start: selectedStart });
     const newUrl = `${window.location.pathname}${search}`;
     window.history.replaceState(null, "", newUrl);
+  }, [selectedWindow, selectedStart]);
+
+  useEffect(() => {
+    if (!selectedWindow || !selectedStart) {
+      setAvailableModels([]);
+      return;
+    }
+    fetchMetrics({ window: selectedWindow, start: selectedStart })
+      .then((res) => setAvailableModels(res.models.map((m) => m.model_name)))
+      .catch(() => setAvailableModels([]));
   }, [selectedWindow, selectedStart]);
 
   const handleWindowChange = (name: string) => {
@@ -86,6 +98,11 @@ const App: React.FC = () => {
           <>
               <MetricsTable window={selectedWindow!} start={selectedStart} />
               <PredictionCurveChart window={selectedWindow!} start={selectedStart} />
+              <ErrorAnalysis
+                window={selectedWindow!}
+                start={selectedStart}
+                availableModels={availableModels}
+              />
             </>
         )}
       </Content>
