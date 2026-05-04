@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, Empty, Layout, Spin } from "antd";
 import { Header } from "./components/Header";
 import { MetricsTable } from "./components/MetricsTable";
+import { PredictionCurveChart } from "./components/PredictionCurveChart";
 import { fetchWindows } from "./api/client";
 import type { WindowInfo } from "./types/api";
 import { buildSearchString, readSelectionFromUrl } from "./utils/url";
@@ -84,6 +85,7 @@ const App: React.FC = () => {
         ) : (
           <>
               <MetricsTable window={selectedWindow!} start={selectedStart} />
+              <PredictionCurveChart window={selectedWindow!} start={selectedStart} />
             </>
         )}
       </Content>
