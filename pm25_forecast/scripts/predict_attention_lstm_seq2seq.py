@@ -172,6 +172,7 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "model_name": "attention_lstm_seq2seq",
         "prediction_dir": str(pred_dir),
+        "sample_count": int(y_predict_raw.size),
         "metrics": metrics_after,
     }
 
