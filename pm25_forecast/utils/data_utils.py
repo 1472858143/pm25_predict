@@ -396,6 +396,8 @@ def prepare_data_bundle(
     future_scaler = FeatureMinMaxScaler.fit(train_enriched, future_columns)
     normalized_full_features = full_scaler.transform(enriched_frame[full_columns])
     normalized_future_features = future_scaler.transform(enriched_frame[future_columns])
+    normalized_full_features = np.nan_to_num(normalized_full_features, nan=0.0, posinf=0.0, neginf=0.0)
+    normalized_future_features = np.nan_to_num(normalized_future_features, nan=0.0, posinf=0.0, neginf=0.0)
     (
         X_full_all,
         X_future_all,
