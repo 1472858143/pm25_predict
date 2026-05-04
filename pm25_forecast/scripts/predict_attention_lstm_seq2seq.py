@@ -6,7 +6,6 @@ import sys
 from typing import Any
 
 import numpy as np
-import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -24,11 +23,11 @@ from pm25_forecast.utils.data_utils import (
     DEFAULT_PREDICT_START,
     TARGET_COLUMN,
     FeatureMinMaxScaler,
+    parse_predict_start,
     read_json,
-    write_json,
 )
-from pm25_forecast.utils.metrics import regression_metrics
 from pm25_forecast.utils.paths import model_dir, prediction_dir, window_experiment_dir
+from pm25_forecast.utils.prediction_io import build_predictions_frame, write_prediction_outputs
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,66 +114,32 @@ def run_prediction(args: argparse.Namespace) -> dict[str, Any]:
     calibration_path = out_dir / "calibration.json"
     calibration = read_json(calibration_path) if calibration_path.exists() else {"method": "none"}
     pred_raw = apply_calibration(pred_raw_model, calibration)
+    calibration_applied = calibration.get("method", "none") != "none"
 
-    horizons = np.arange(1, int(args.output_window) + 1)
-    rows: list[dict[str, Any]] = []
-    for i, horizon in enumerate(horizons):
-        rows.append(
-            {
-                "sample_id": 0,
-                "origin_timestamp": timestamps_predict_start,
-                "target_end_timestamp": timestamps_predict_end,
-                "timestamp": str(timestamps_predict_target[i]),
-                "horizon": int(horizon),
-                "y_true": float(y_predict_raw[0, i]),
-                "y_pred_model": float(pred_raw_model[0, i]),
-                "y_pred": float(pred_raw[0, i]),
-                "error": float(pred_raw[0, i] - y_predict_raw[0, i]),
-                "abs_error": float(abs(pred_raw[0, i] - y_predict_raw[0, i])),
-                "relative_error": float(abs(pred_raw[0, i] - y_predict_raw[0, i]) / max(abs(y_predict_raw[0, i]), 1e-6)),
-            }
-        )
-    pd.DataFrame(rows).to_csv(pred_dir / "predictions.csv", index=False, encoding="utf-8")
-
-    metrics_after = regression_metrics(y_predict_raw, pred_raw)
-    metrics_before = regression_metrics(y_predict_raw, pred_raw_model)
-    write_json(pred_dir / "metrics.json", metrics_after)
-    write_json(
-        pred_dir / "prediction_summary.json",
-        {
-            "model_name": "attention_lstm_seq2seq",
-            "prediction_dir": str(pred_dir),
-            "model_path": str(ckpt),
-            "calibration_path": str(calibration_path) if calibration_path.exists() else None,
-            "calibration_applied": calibration.get("method", "none") != "none",
-            "calibration_method": calibration.get("method", "none"),
-            "device": str(device),
-            "sample_count": int(y_predict_raw.size),
-            "forecast_sample_count": 1,
-            "output_window": int(args.output_window),
-            "predict_start": timestamps_predict_start,
-            "metrics": metrics_after,
-            "model_raw_metrics": metrics_before,
-        },
+    predictions = build_predictions_frame(
+        model_name="attention_lstm_seq2seq",
+        y_true=y_predict_raw,
+        y_pred_model=pred_raw_model,
+        y_pred=pred_raw,
+        timestamps_start=[timestamps_predict_start],
+        timestamps_end=[timestamps_predict_end],
+        timestamps_target=timestamps_predict_target.reshape(1, -1),
     )
 
-    horizon_metrics = []
-    for i in range(int(args.output_window)):
-        h_metrics = regression_metrics(y_predict_raw[:, i : i + 1], pred_raw[:, i : i + 1])
-        h_metrics["horizon"] = int(i + 1)
-        horizon_metrics.append(h_metrics)
-    pd.DataFrame(horizon_metrics)[["horizon", "RMSE", "MAE", "MAPE", "SMAPE", "R2", "bias"]].to_csv(
-        pred_dir / "horizon_metrics.csv",
-        index=False,
-        encoding="utf-8",
+    summary = write_prediction_outputs(
+        predictions=predictions,
+        output_dir=pred_dir,
+        model_name="attention_lstm_seq2seq",
+        model_path=ckpt,
+        calibration_path=calibration_path if calibration_path.exists() else None,
+        calibration_applied=calibration_applied,
+        calibration_method=calibration.get("method", "none"),
+        device=str(device),
+        predict_start=args.predict_start,
     )
-
-    return {
-        "model_name": "attention_lstm_seq2seq",
-        "prediction_dir": str(pred_dir),
-        "sample_count": int(y_predict_raw.size),
-        "metrics": metrics_after,
-    }
+    summary["experiment_dir"] = str(window_dir)
+    summary["predict_start"] = str(parse_predict_start(args.predict_start))
+    return summary
 
 
 def main() -> None:

@@ -1,1 +1,23 @@
-optuna>=3.6
+# PyTorch (CUDA 11.8) - install with:
+#   pip install torch==2.3.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.3.1+cu118
+
+# Core ML / data science
+numpy==2.2.6
+pandas==2.3.3
+scikit-learn==1.7.2
+xgboost==3.2.0
+statsmodels==0.14.6
+pmdarima==2.1.1
+optuna==4.8.0
+matplotlib==3.10.8
+
+# Web dashboard
+fastapi==0.136.1
+uvicorn==0.46.0
+pydantic==2.13.3
+
+# Testing
+pytest>=8.0
+httpx>=0.27

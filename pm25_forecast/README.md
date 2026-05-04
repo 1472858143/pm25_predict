@@ -140,6 +140,7 @@ python -m pm25_forecast.scripts.train_model --model sarima --sarima-auto --seaso
 python -m pm25_forecast.scripts.predict_model --model lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda
 python -m pm25_forecast.scripts.predict_model --model random_forest --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
 python -m pm25_forecast.scripts.predict_model --model xgboost --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00"
+python -m pm25_forecast.scripts.predict_model --model attention_lstm --input-window 720 --output-window 72 --predict-start "2026-03-01 00:00:00+08:00" --device cuda --calibration none
 ```
 
 汇总已有预测结果：
