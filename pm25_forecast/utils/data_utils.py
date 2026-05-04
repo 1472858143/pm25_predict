@@ -36,6 +36,35 @@ FEATURE_COLUMNS = [
     "pm25",
 ]
 TARGET_COLUMN = "pm25"
+ENRICHED_FEATURE_COLUMNS_HISTORY = [
+    "temperature",
+    "humidity",
+    "wind_speed",
+    "precipitation",
+    "pressure",
+    "pm25",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "pm25_lag_1h",
+    "pm25_lag_24h",
+    "pm25_lag_168h",
+    "pm25_roll24_mean",
+    "pm25_roll24_max",
+    "pm25_roll24_std",
+]
+ENRICHED_FEATURE_COLUMNS_FUTURE = [
+    "temperature",
+    "humidity",
+    "wind_speed",
+    "precipitation",
+    "pressure",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+]
 
 
 @dataclass
@@ -202,6 +231,30 @@ def fill_missing_values(frame: pd.DataFrame) -> pd.DataFrame:
     if filled[numeric_columns].isna().any().any():
         raise ValueError("Missing numeric values remain after interpolation.")
     return filled
+
+
+def build_enriched_features(frame: pd.DataFrame, drop_warmup: bool = True) -> pd.DataFrame:
+    if "timestamp" not in frame.columns:
+        raise ValueError("frame must contain a 'timestamp' column")
+    out = frame.copy()
+    ts = pd.to_datetime(out["timestamp"])
+    out["hour_sin"] = np.sin(2 * np.pi * ts.dt.hour / 24.0)
+    out["hour_cos"] = np.cos(2 * np.pi * ts.dt.hour / 24.0)
+    out["dow_sin"] = np.sin(2 * np.pi * ts.dt.dayofweek / 7.0)
+    out["dow_cos"] = np.cos(2 * np.pi * ts.dt.dayofweek / 7.0)
+
+    pm25 = out["pm25"].astype(float)
+    out["pm25_lag_1h"] = pm25.shift(1)
+    out["pm25_lag_24h"] = pm25.shift(24)
+    out["pm25_lag_168h"] = pm25.shift(168)
+    rolled = pm25.shift(1).rolling(window=24, min_periods=24)
+    out["pm25_roll24_mean"] = rolled.mean()
+    out["pm25_roll24_max"] = rolled.max()
+    out["pm25_roll24_std"] = rolled.std()
+
+    if drop_warmup:
+        out = out.iloc[168:].reset_index(drop=True)
+    return out
 
 
 def build_windows(
