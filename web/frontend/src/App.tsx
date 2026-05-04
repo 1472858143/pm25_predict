@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Empty, Layout, Spin } from "antd";
 import { Header } from "./components/Header";
+import { MetricsTable } from "./components/MetricsTable";
 import { fetchWindows } from "./api/client";
 import type { WindowInfo } from "./types/api";
 import { buildSearchString, readSelectionFromUrl } from "./utils/url";
@@ -81,7 +82,9 @@ const App: React.FC = () => {
         {selectedStart === null ? (
           <Empty description="该时间窗口暂无预测结果" />
         ) : (
-          <div>三个模块占位（Tasks 11/12/13 实现）</div>
+          <>
+              <MetricsTable window={selectedWindow!} start={selectedStart} />
+            </>
         )}
       </Content>
     </Layout>
