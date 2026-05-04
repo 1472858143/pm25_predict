@@ -142,6 +142,8 @@ def load_beijing_data(path: str | Path = DEFAULT_DATA_PATH) -> pd.DataFrame:
         raise FileNotFoundError(f"Data file not found: {data_path}")
 
     raw = pd.read_csv(data_path)
+    if "temp" not in raw.columns and "temperature" in raw.columns:
+        raw = raw.rename(columns={"temperature": "temp"})
     missing = sorted(set(RAW_COLUMN_MAP) - set(raw.columns))
     if missing:
         raise ValueError(f"Missing required columns in {data_path}: {missing}")
@@ -287,6 +289,40 @@ def build_windows(
     )
 
 
+def build_windows_v2(
+    normalized_full_features: np.ndarray,
+    normalized_future_features: np.ndarray,
+    raw_target: np.ndarray,
+    timestamps: np.ndarray,
+    input_window: int,
+    output_window: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    X_full: list[np.ndarray] = []
+    X_future: list[np.ndarray] = []
+    y: list[np.ndarray] = []
+    target_start_timestamps: list[str] = []
+    target_end_timestamps: list[str] = []
+    target_timestamps: list[np.ndarray] = []
+    input_window = int(input_window)
+    output_window = int(output_window)
+    for target_index in range(input_window, len(normalized_full_features) - output_window + 1):
+        target_slice = slice(target_index, target_index + output_window)
+        X_full.append(normalized_full_features[target_index - input_window : target_index])
+        X_future.append(normalized_future_features[target_slice])
+        y.append(raw_target[target_slice].astype(float))
+        target_start_timestamps.append(str(timestamps[target_index]))
+        target_end_timestamps.append(str(timestamps[target_index + output_window - 1]))
+        target_timestamps.append(timestamps[target_slice].astype(object))
+    return (
+        np.asarray(X_full, dtype=np.float32),
+        np.asarray(X_future, dtype=np.float32),
+        np.asarray(y, dtype=np.float32),
+        np.asarray(target_start_timestamps, dtype=object),
+        np.asarray(target_end_timestamps, dtype=object),
+        np.asarray(target_timestamps, dtype=object),
+    )
+
+
 def prepare_data_bundle(
     data_path: str | Path = DEFAULT_DATA_PATH,
     output_root: str | Path = DEFAULT_OUTPUT_ROOT,
@@ -351,21 +387,60 @@ def prepare_data_bundle(
     y_all_scaled = (y_all_raw - scaler.data_min[target_index]) / scaler.scale[target_index]
 
     bundle_path = data_dir / "windows.npz"
+
+    enriched_frame = build_enriched_features(frame, drop_warmup=False)
+    full_columns = ENRICHED_FEATURE_COLUMNS_HISTORY
+    future_columns = ENRICHED_FEATURE_COLUMNS_FUTURE
+    train_enriched = enriched_frame.iloc[: len(train_frame)].copy()
+    full_scaler = FeatureMinMaxScaler.fit(train_enriched, full_columns)
+    future_scaler = FeatureMinMaxScaler.fit(train_enriched, future_columns)
+    normalized_full_features = full_scaler.transform(enriched_frame[full_columns])
+    normalized_future_features = future_scaler.transform(enriched_frame[future_columns])
+    (
+        X_full_all,
+        X_future_all,
+        y_v2_all_raw,
+        ts_v2_start_all,
+        ts_v2_end_all,
+        ts_v2_target_all,
+    ) = build_windows_v2(
+        normalized_full_features,
+        normalized_future_features,
+        raw_target,
+        timestamps,
+        input_window,
+        output_window,
+    )
+    if not (
+        np.array_equal(ts_start_all, ts_v2_start_all)
+        and np.array_equal(ts_end_all, ts_v2_end_all)
+        and np.array_equal(ts_target_all, ts_v2_target_all)
+        and np.allclose(y_all_raw, y_v2_all_raw, equal_nan=True)
+    ):
+        raise RuntimeError("v2 window timestamps are not aligned with legacy windows.")
+
     np.savez_compressed(
         bundle_path,
+        bundle_version=np.asarray(2, dtype=np.int64),
         X_train=X_all[train_mask],
+        X_train_full=X_full_all[train_mask],
+        X_train_future=X_future_all[train_mask],
         y_train=y_all_scaled[train_mask].astype(np.float32),
         y_train_raw=y_all_raw[train_mask].astype(np.float32),
         timestamps_train_start=ts_start_all[train_mask],
         timestamps_train_end=ts_end_all[train_mask],
         timestamps_train_target=ts_target_all[train_mask],
         X_validation=X_all[validation_mask],
+        X_validation_full=X_full_all[validation_mask],
+        X_validation_future=X_future_all[validation_mask],
         y_validation=y_all_scaled[validation_mask].astype(np.float32),
         y_validation_raw=y_all_raw[validation_mask].astype(np.float32),
         timestamps_validation_start=ts_start_all[validation_mask],
         timestamps_validation_end=ts_end_all[validation_mask],
         timestamps_validation_target=ts_target_all[validation_mask],
         X_predict=X_all[predict_mask],
+        X_predict_full=X_full_all[predict_mask],
+        X_predict_future=X_future_all[predict_mask],
         y_predict=y_all_scaled[predict_mask].astype(np.float32),
         y_predict_raw=y_all_raw[predict_mask].astype(np.float32),
         timestamps_predict_start=ts_start_all[predict_mask],
@@ -374,7 +449,11 @@ def prepare_data_bundle(
     )
 
     scaler_path = data_dir / "scaler.json"
+    scaler_full_path = data_dir / "scaler_full.json"
+    scaler_future_path = data_dir / "scaler_future.json"
     write_json(scaler_path, scaler.to_dict())
+    write_json(scaler_full_path, full_scaler.to_dict())
+    write_json(scaler_future_path, future_scaler.to_dict())
 
     config = {
         "experiment_name": exp_name,
@@ -386,6 +465,8 @@ def prepare_data_bundle(
         "predict_end": str(prediction_end),
         "data_path": str(Path(data_path)),
         "feature_columns": FEATURE_COLUMNS,
+        "feature_columns_full": full_columns,
+        "feature_columns_future": future_columns,
         "target_column": TARGET_COLUMN,
         "train_period": {
             "row_count": int(len(train_frame)),
@@ -410,12 +491,21 @@ def prepare_data_bundle(
         },
         "bundle_path": str(bundle_path),
         "scaler_path": str(scaler_path),
+        "scaler_full_path": str(scaler_full_path),
+        "scaler_future_path": str(scaler_future_path),
+        "bundle_version": 2,
         "sample_shapes": {
             "X_train": list(X_all[train_mask].shape),
+            "X_train_full": list(X_full_all[train_mask].shape),
+            "X_train_future": list(X_future_all[train_mask].shape),
             "y_train": list(y_all_scaled[train_mask].shape),
             "X_validation": list(X_all[validation_mask].shape),
+            "X_validation_full": list(X_full_all[validation_mask].shape),
+            "X_validation_future": list(X_future_all[validation_mask].shape),
             "y_validation": list(y_all_scaled[validation_mask].shape),
             "X_predict": list(X_all[predict_mask].shape),
+            "X_predict_full": list(X_full_all[predict_mask].shape),
+            "X_predict_future": list(X_future_all[predict_mask].shape),
             "y_predict": list(y_all_scaled[predict_mask].shape),
         },
     }
