@@ -1,6 +1,7 @@
 export const MODEL_COLORS: Record<string, string> = {
   lstm: "#1677ff",
-  attention_lstm: "#f5222d",
+  attention_lstm: "#ff7875",
+  attention_lstm_seq2seq: "#c41d23",
   xgboost: "#52c41a",
   random_forest: "#722ed1",
   arima: "#fa8c16",
