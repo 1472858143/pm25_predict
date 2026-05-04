@@ -6,6 +6,7 @@ from app.config import get_output_root
 from app.data_loader import (
     list_models,
     list_windows,
+    load_horizon_metrics_csv,
     load_metrics,
     load_predictions_csv,
     resolve_predict_start,
@@ -13,6 +14,8 @@ from app.data_loader import (
     window_exists,
 )
 from app.schemas import (
+    HorizonMetricRow,
+    HorizonMetricsResponse,
     MetricsResponse,
     ModelMetrics,
     ModelPredictionsResponse,
@@ -165,6 +168,35 @@ def get_predictions_for_model(
             )
         )
     return ModelPredictionsResponse(
+        window=chosen_window,
+        start=chosen_start,
+        model_name=model_name,
+        rows=parsed,
+    )
+
+
+@router.get("/horizon-metrics/{model_name}", response_model=HorizonMetricsResponse)
+def get_horizon_metrics(
+    model_name: str, window: str | None = None, start: str | None = None
+) -> HorizonMetricsResponse:
+    root = get_output_root()
+    chosen_window, chosen_start = _resolve_window_start(window, start)
+    if model_name not in list_models(root, chosen_window, chosen_start):
+        raise HTTPException(status_code=404, detail=f"Model '{model_name}' not found")
+    rows = load_horizon_metrics_csv(root, chosen_window, chosen_start, model_name)
+    parsed = [
+        HorizonMetricRow(
+            horizon=int(r["horizon"]),
+            RMSE=float(r["RMSE"]),
+            MAE=float(r["MAE"]),
+            MAPE=float(r["MAPE"]),
+            SMAPE=float(r["SMAPE"]),
+            R2=float(r["R2"]),
+            bias=float(r["bias"]),
+        )
+        for r in rows
+    ]
+    return HorizonMetricsResponse(
         window=chosen_window,
         start=chosen_start,
         model_name=model_name,
